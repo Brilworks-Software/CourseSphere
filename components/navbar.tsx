@@ -1,8 +1,5 @@
 "use client";
 
-// Navbar is fully self-contained and does not receive any props.
-// All authentication and user info is fetched internally.
-
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -60,7 +57,8 @@ const Navbar = () => {
 
   if (user?.role === "admin" || user?.role === "super_admin") {
     links.push(
-      { href: "/courses/new", label: "Create Course" }
+      { href: "/courses/new", label: "Create Course" },
+      { href: "/organization", label: "Manage Organization" }
     );
   }
 

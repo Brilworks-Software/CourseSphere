@@ -10,11 +10,24 @@ export async function PATCH(
     const supabase = await createClient();
 
     // Check if user has access
-    const { data: course } = await supabase
+
+    // Fetch course with organization details and lessons count
+    const { data: course, error: fetchError } = await supabase
       .from("courses")
-      .select("*")
+      .select(
+        `*,
+        organization:organization_id (
+          id, name, slug, logo_url, thumbnail_url
+        ),
+        lessons:lessons(count)
+      `
+      )
       .eq("id", id)
       .single();
+
+    if (fetchError) {
+      return NextResponse.json({ error: fetchError.message }, { status: 400 });
+    }
 
     if (!course) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
@@ -47,28 +60,58 @@ export async function PATCH(
         ? body.sub_category
         : course.sub_category ?? null;
 
-    const { data, error } = await supabase
+    // Handle is_free and price logic
+    const isFree = body.is_free === undefined ? course.is_free : body.is_free;
+    let price = 0;
+    if (!isFree && body.price !== undefined) {
+      price = body.price;
+    } else if (!isFree && course.price !== undefined) {
+      price = course.price;
+    }
+
+    const { error: updateError } = await supabase
       .from("courses")
       .update({
         title: body.title,
         description: body.description || null,
         is_active:
-          body.is_active !== undefined ? body.is_active : course.is_active,
+          body.is_active === undefined ? course.is_active : body.is_active,
         // update thumbnail_url when provided (null clears it)
         thumbnail_url: thumbnail,
         // update categories
         primary_category,
         sub_category,
+        is_free: isFree,
+        price,
       })
-      .eq("id", id)
-      .select()
-      .single();
+      .eq("id", id);
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 400 });
     }
 
-    return NextResponse.json(data);
+    // Refetch the updated course with organization and lessons count
+    const { data: updatedCourse, error: refetchError } = await supabase
+      .from("courses")
+      .select(
+        `*,
+        organization:organization_id (
+          id, name, slug, logo_url, thumbnail_url
+        ),
+        lessons:lessons(count)
+      `
+      )
+      .eq("id", id)
+      .single();
+
+    if (refetchError) {
+      return NextResponse.json(
+        { error: refetchError.message },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(updatedCourse);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

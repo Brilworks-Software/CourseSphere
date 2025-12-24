@@ -28,7 +28,6 @@ export function ManageCourseForm({ course }: { course: Course }) {
   const router = useRouter();
 
   // keep track of the thumbnail URL from the image uploader
-  // use empty string as default to simplify form serialization and updates
   const [thumbnailUrl, setThumbnailUrl] = useState<string>(
     (course as any).thumbnail_url ?? ""
   );
@@ -41,6 +40,12 @@ export function ManageCourseForm({ course }: { course: Course }) {
     (course as any).sub_category ?? ""
   );
 
+  // new fields for is_free and price
+  const [isFree, setIsFree] = useState((course as any).is_free ?? true);
+  const [price, setPrice] = useState(
+    (course as any).price ? String((course as any).price) : ""
+  );
+
   // derive selected primary category to show its children as sub-options
   const selectedCategory = COURSE_CATEGORIES.find(
     (c) => c.value === primaryCategory
@@ -50,6 +55,13 @@ export function ManageCourseForm({ course }: { course: Course }) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    // Validate price if not free
+    if (!isFree && (!price || isNaN(Number(price)) || Number(price) <= 0)) {
+      setError("Please enter a valid price for paid courses.");
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch(`/api/courses/${course.id}`, {
@@ -62,9 +74,10 @@ export function ManageCourseForm({ course }: { course: Course }) {
           description,
           is_active: isActive,
           thumbnail_url: thumbnailUrl === "" ? null : thumbnailUrl,
-          // include category fields (use DB column names)
           primary_category: primaryCategory === "" ? null : primaryCategory,
           sub_category: subCategory === "" ? null : subCategory,
+          is_free: isFree,
+          price: isFree ? 0 : Number(price),
         }),
       });
 
@@ -173,15 +186,59 @@ export function ManageCourseForm({ course }: { course: Course }) {
         </div>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="is_active"
-          checked={isActive}
-          onCheckedChange={(checked) => setIsActive(Boolean(checked))}
-        />
-        <Label htmlFor="is_active" className="mb-0">
-          Course is active
+      <div className="flex items-center space-x-4">
+        <div className="flex items-center">
+          <Checkbox
+            id="is_free"
+            checked={isFree}
+            onCheckedChange={(v) => setIsFree(Boolean(v))}
+            className="h-4 w-4 text-accent focus:ring-accent border-muted rounded"
+            disabled={loading}
+          />
+          <Label
+            htmlFor="is_free"
+            className="ml-2 block text-sm text-muted-foreground"
+          >
+            Free Course
+          </Label>
+        </div>
+        <div className="flex items-center">
+          <Checkbox
+            id="is_active"
+            checked={isActive}
+            onCheckedChange={(checked) => setIsActive(Boolean(checked))}
+            className="h-4 w-4 text-accent focus:ring-accent border-muted rounded"
+            disabled={loading}
+          />
+          <Label
+            htmlFor="is_active"
+            className="ml-2 block text-sm text-muted-foreground"
+          >
+            Course is active
+          </Label>
+        </div>
+      </div>
+
+      {/* Price input, only enabled if not free */}
+      <div>
+        <Label
+          htmlFor="price"
+          className="block text-sm font-medium text-muted-foreground mb-2"
+        >
+          Price (in ₹)
         </Label>
+        <input
+          id="price"
+          type="number"
+          min="0"
+          step="1"
+          value={isFree ? "" : price}
+          onChange={(e) => setPrice(e.target.value)}
+          placeholder="Enter course price"
+          disabled={isFree || loading}
+          required={!isFree}
+          className="w-full border rounded px-3 py-2"
+        />
       </div>
 
       <Button type="submit" disabled={loading}>

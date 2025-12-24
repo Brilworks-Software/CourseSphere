@@ -7,17 +7,25 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     // Use instructor_id from the request body
+    // Handle is_free and price logic
+    const isFree = body.is_free === undefined ? true : body.is_free;
+    let price = 0;
+    if (!isFree && body.price !== undefined) {
+      price = body.price;
+    }
     const { data, error } = await supabase
       .from("courses")
       .insert({
         title: body.title,
         description: body.description || null,
         instructor_id: body.instructor_id, // corrected line
-        is_active: body.is_active !== undefined ? body.is_active : true,
+        is_active: body.is_active === undefined ? true : body.is_active,
         organization_id: body.organization_id || null,
         thumbnail_url: body.thumbnail_url || null,
         primary_category: body.primary_category || null,
         sub_category: body.sub_category || null,
+        is_free: isFree,
+        price,
       })
       .select()
       .single();
@@ -34,7 +42,7 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const supabase = await createClient();
+    const supabase = createClient();
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
 

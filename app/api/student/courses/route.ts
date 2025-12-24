@@ -15,10 +15,17 @@ export async function GET(request: Request) {
       );
     }
 
-    // Fetch course
+    // Fetch course with organization details and lessons count
     const { data: course, error: courseError } = await supabase
       .from("courses")
-      .select("*")
+      .select(
+        `*,
+        organization:organization_id (
+          id, name, slug, logo_url, thumbnail_url
+        ),
+        lessons:lessons(count)
+      `
+      )
       .eq("id", courseId)
       .single();
 
@@ -26,7 +33,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: courseError.message }, { status: 404 });
     }
 
-    // Fetch lessons
+    // Fetch lessons (full list)
     const { data: lessons, error: lessonsError } = await supabase
       .from("lessons")
       .select("*")
@@ -40,16 +47,16 @@ export async function GET(request: Request) {
     }
 
     // Fetch enrollment
-    const { data: enrollment, error: enrollmentError } = await supabase
+    const { data: enrollment } = await supabase
       .from("enrollments")
       .select("*")
       .eq("course_id", courseId)
       .eq("student_id", studentId)
       .single();
 
-    // It's okay if enrollment is null (not enrolled)
+    // Compose response: course with organization, lessons (full), lessons count, enrollment
     return NextResponse.json({
-      course,
+      ...course,
       lessons,
       enrollment: enrollment || null,
     });
