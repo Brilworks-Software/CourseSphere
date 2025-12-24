@@ -1,16 +1,9 @@
 import Link from "next/link";
 import * as React from "react";
 import { Course, UserRole } from "@/lib/types";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, User } from "lucide-react";
+import { BookOpen, User, Building2, Tag } from "lucide-react";
 
 export type Context =
   | "public"
@@ -44,93 +37,83 @@ export function CourseCard({
   const title = course?.title || "Untitled";
   const desc = course?.description || "No description";
   const thumb = course?.thumbnail_url ?? "/default-thumbnail.png";
-  const lessonsCount =
-    (course.lessons as any)?.[0]?.count || (course._count?.lessons ?? 0);
-
-  // Determine where the card should link when clicked
+  const lessonsCount = (course.lessons as any)?.[0]?.count || 0;
+  const org = course.organization;
+  const price = course.is_free ? "Free" : `₹${course.price}`;
+  const category = course.primary_category;
+  const subCategory = course.sub_category;
   const href = `/courses/${course.id}`;
 
   return (
-    <Card className={`overflow-hidden max-w-96 ${className}`}>
-      <Link href={href} className="no-underline block">
-        <div className="p-2">
-          <div>
-            <img
-              src={thumb}
-              alt={title}
-              className="rounded-sm object-cover max-h-60 aspect-video w-full"
-            />
+    <Card
+      className={`rounded-2xl border bg-card shadow-sm hover:shadow-lg transition-shadow duration-200 ${className}`}
+    >
+      <Link href={href} className="block">
+        <div className="relative rounded-t-2xl overflow-hidden">
+          <img
+            src={thumb}
+            alt={title}
+            className="object-cover w-full h-36 md:h-40 lg:h-44 xl:h-48"
+          />
+        </div>
+        <div className="p-4">
+          <div className="flex items-center gap-2 mb-2 min-h-8">
+            {org?.logo_url && (
+              <img
+                src={org.logo_url}
+                alt={org.name}
+                className="w-6 h-6 rounded-full border bg-card object-cover"
+              />
+            )}
+            {org?.name && (
+              <span className="text-xs text-muted-foreground font-medium truncate">
+                {org.name}
+              </span>
+            )}
           </div>
-          <CardContent className="p-0 pt-2">
-            <CardTitle className="text-lg h-14">{title}</CardTitle>
-            <div className="flex items-center text-sm mt-3 text-muted-foreground gap-4">
-              <div className="flex items-center">
-                <User className="h-4 w-4 mr-2" />
-                <span>{course.instructor?.name || "Unknown"}</span>
-              </div>
-
-              <div className="flex items-center">
-                <BookOpen className="h-4 w-4 mr-2" />
-                <span>{lessonsCount} lessons</span>
-              </div>
+          <div className="flex items-center gap-2 mb-2">
+            <h2 className="text-base font-semibold line-clamp-2 flex-1 text-card-foreground">
+              {title}
+            </h2>
+            <span className="text-xs px-2 py-1 rounded bg-secondary text-secondary-foreground font-medium ml-2 whitespace-nowrap">
+              {price}
+            </span>
+          </div>
+          <div className="text-xs text-muted-foreground line-clamp-2 mb-2 min-h-10">
+            {desc}
+          </div>
+          <div className="flex flex-wrap gap-2 mb-2 min-h-7">
+            {category && (
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <Tag className="h-3 w-3" />
+                {category}
+              </Badge>
+            )}
+            {subCategory && (
+              <Badge variant="outline" className="flex items-center gap-1">
+                <Tag className="h-3 w-3" />
+                {subCategory}
+              </Badge>
+            )}
+            {org?.name && (
+              <Badge variant="default" className="flex items-center gap-1">
+                <Building2 className="h-3 w-3" />
+                {org.name}
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
+            <div className="flex items-center gap-1">
+              <BookOpen className="h-4 w-4 mr-1" />
+              <span>{lessonsCount} lessons</span>
             </div>
-            {/* <p className="text-sm text-muted-foreground line-clamp-2">{desc}</p> */}
-          </CardContent>
+            <div className="flex items-center gap-1">
+              <User className="h-4 w-4 mr-1" />
+              <span>{course.instructor?.name || "Unknown"}</span>
+            </div>
+          </div>
         </div>
       </Link>
-
-      {/* <CardFooter className="pt-0">
-        <div className="flex w-full gap-2">
-          {(context === "dashboard-admin" || context === "management") && (
-            <>
-              <Link href={`/courses/${course.id}`} className="w-full">
-                <Button className="w-full" variant="secondary">
-                  Manage
-                </Button>
-              </Link>
-              <Badge
-                className="whitespace-nowrap"
-                variant={course.is_active ? "default" : "destructive"}
-              >
-                {course.is_active ? "Active" : "Inactive"}
-              </Badge>
-            </>
-          )}
-
-          {context === "public" && (
-            <>
-              {isEnrolled ? (
-                <Link href={`/courses/${course.id}`} className="w-full">
-                  <Button className="w-full" variant="secondary">
-                    Continue Learning
-                  </Button>
-                </Link>
-              ) : (
-                // if onEnroll is provided call it, otherwise navigate to course page
-                <div className="w-full">
-                  {onEnroll ? (
-                    <Button className="w-full" onClick={onEnroll}>
-                      Enroll
-                    </Button>
-                  ) : (
-                    <Link href={`/courses/${course.id}`} className="w-full">
-                      <Button className="w-full">View Course</Button>
-                    </Link>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-
-          {context === "dashboard-student" && (
-            <Link href={`/courses/${course.id}`} className="w-full">
-              <Button className="w-full" variant="secondary">
-                Open
-              </Button>
-            </Link>
-          )}
-        </div>
-      </CardFooter> */}
     </Card>
   );
 }

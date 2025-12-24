@@ -58,10 +58,6 @@ const Navbar = () => {
     { href: "/courses", label: "Courses" },
   ];
 
-  // Render links based on user role
-  if (user?.role === "student") {
-    links.push({ href: "/my-courses", label: "My Courses" });
-  }
   if (user?.role === "admin" || user?.role === "super_admin") {
     links.push(
       { href: "/courses/new", label: "Create Course" }

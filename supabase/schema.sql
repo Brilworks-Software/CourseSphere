@@ -11,8 +11,12 @@ CREATE TABLE public.courses (
   thumbnail_url text,
   primary_category text,
   sub_category text,
+  organization_id uuid,
+  is_free boolean NOT NULL DEFAULT true,
+  price bigint NOT NULL DEFAULT '0'::bigint,
   CONSTRAINT courses_pkey PRIMARY KEY (id),
-  CONSTRAINT courses_instructor_id_fkey FOREIGN KEY (instructor_id) REFERENCES public.users(id)
+  CONSTRAINT courses_instructor_id_fkey FOREIGN KEY (instructor_id) REFERENCES public.users(id),
+  CONSTRAINT courses_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id)
 );
 CREATE TABLE public.enrollments (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
