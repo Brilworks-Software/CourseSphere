@@ -1,6 +1,6 @@
-import { createClient } from './supabase/server'
 import { redirect } from 'next/navigation'
 import type { UserRole } from './types'
+import { createClient } from "./supabase/client"
 
 export async function getUser() {
   const supabase = await createClient()
@@ -20,7 +20,7 @@ export async function getProfile() {
   const user = await getUser()
 
   const { data: profile, error } = await supabase
-    .from('profiles')
+    .from('users')
     .select('*')
     .eq('id', user.id)
     .single()
@@ -33,7 +33,7 @@ export async function getProfile() {
     
     // Create profile with default values
     const { data: newProfile, error: createError } = await supabase
-      .from('profiles')
+      .from('users')
       .insert({
         id: user.id,
         name: metadata.name || null,
