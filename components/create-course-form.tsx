@@ -1,123 +1,200 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import ImageUploadWithCrop from "./image-upload";
+import { COURSE_CATEGORIES } from "@/app/util/course_category";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { useUserContext } from "@/app/provider/user-context";
 
 export function CreateCourseForm() {
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [isActive, setIsActive] = useState(true)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
+  const { user } = useUserContext();
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [isActive, setIsActive] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  // thumbnail and category states (start empty for creation)
+  const [thumbnailUrl, setThumbnailUrl] = useState<string>("");
+  const [primaryCategory, setPrimaryCategory] = useState<string>("");
+  const [subCategory, setSubCategory] = useState<string>("");
+
+  const selectedCategory = COURSE_CATEGORIES.find(
+    (c) => c.value === primaryCategory
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
 
     try {
-      const response = await fetch('/api/courses', {
-        method: 'POST',
+      const response = await fetch("/api/courses", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           title,
           description,
           is_active: isActive,
+          thumbnail_url: thumbnailUrl === "" ? null : thumbnailUrl,
+          primary_category: primaryCategory === "" ? null : primaryCategory,
+          sub_category: subCategory === "" ? null : subCategory,
+          instructor_id: user?.id,
+          organization_id: user?.organization_id
         }),
-      })
+      });
 
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to create course')
+        const data = await response.json();
+        throw new Error(data.error || "Failed to create course");
       }
 
-      const data = await response.json()
-      router.push(`/dashboard/courses/${data.id}`)
+      const data = await response.json();
+      setLoading(false);
+      router.push(`/courses/${data.id}`);
     } catch (err: any) {
-      setError(err.message)
-      setLoading(false)
+      setError(err.message);
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-6 bg-card rounded-lg shadow p-6"
+    >
       {error && (
-        <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
-          <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+        <div className="rounded-md bg-destructive/10 p-4">
+          <p className="text-sm text-destructive">{error}</p>
         </div>
       )}
 
       <div>
-        <label
+        <Label
           htmlFor="title"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          className="block text-sm font-medium text-muted-foreground mb-2"
         >
           Course Title *
-        </label>
-        <input
+        </Label>
+        <Input
           id="title"
           type="text"
           required
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
           placeholder="Enter course title"
         />
       </div>
 
       <div>
-        <label
+        <Label
           htmlFor="description"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          className="block text-sm font-medium text-muted-foreground mb-2"
         >
           Description
-        </label>
-        <textarea
+        </Label>
+        <Textarea
           id="description"
           rows={4}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
           placeholder="Enter course description"
         />
       </div>
 
-      <div className="flex items-center">
-        <input
-          id="is_active"
-          type="checkbox"
-          checked={isActive}
-          onChange={(e) => setIsActive(e.target.checked)}
-          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+      <div>
+        <ImageUploadWithCrop
+          value={thumbnailUrl}
+          onChange={(url) => setThumbnailUrl(url ?? "")}
+          showPreview={true}
+          disabled={loading}
+          aspectRatio={"landscape"}
         />
-        <label
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="w-full">
+          <Label className="block text-sm font-medium mb-1">Category</Label>
+          <Select
+            value={primaryCategory}
+            onValueChange={(val) => {
+              setPrimaryCategory(val);
+              setSubCategory("");
+            }}
+            disabled={loading}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent className="w-full">
+              {COURSE_CATEGORIES.map((cat) => (
+                <SelectItem key={cat.value} value={cat.value}>
+                  {cat.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="w-full">
+          <Label className="block text-sm font-medium mb-1">Sub-category</Label>
+          <Select
+            value={subCategory}
+            onValueChange={setSubCategory}
+            disabled={!primaryCategory || loading}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select sub-category" />
+            </SelectTrigger>
+            <SelectContent className="w-full">
+              {selectedCategory?.children?.map((sub) => (
+                <SelectItem key={sub.value} value={sub.value}>
+                  {sub.label}
+                </SelectItem>
+              )) ?? null}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="flex items-center">
+        <Checkbox
+          id="is_active"
+          checked={isActive}
+          onCheckedChange={(v) => setIsActive(Boolean(v))}
+          className="h-4 w-4 text-accent focus:ring-accent border-muted rounded"
+        />
+        <Label
           htmlFor="is_active"
-          className="ml-2 block text-sm text-gray-700 dark:text-gray-300"
+          className="ml-2 block text-sm text-muted-foreground"
         >
           Course is active
-        </label>
+        </Label>
       </div>
 
       <div className="flex space-x-4">
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? 'Creating...' : 'Create Course'}
-        </button>
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-2 px-4 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-        >
+        <Button type="submit" disabled={loading}>
+          {loading ? "Creating..." : "Create Course"}
+        </Button>
+        <Button type="button" onClick={() => router.back()} variant="outline">
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
-  )
+  );
 }
-

@@ -1,235 +1,89 @@
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
 
--- Create profiles table
-CREATE TABLE IF NOT EXISTS profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  name TEXT,
-  role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('super_admin', 'admin', 'student')),
-  theme TEXT NOT NULL DEFAULT 'system' CHECK (theme IN ('light', 'dark', 'system')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
+CREATE TABLE public.courses (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  title text NOT NULL,
+  description text,
+  instructor_id uuid NOT NULL,
+  is_active boolean DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  thumbnail_url text,
+  primary_category text,
+  sub_category text,
+  CONSTRAINT courses_pkey PRIMARY KEY (id),
+  CONSTRAINT courses_instructor_id_fkey FOREIGN KEY (instructor_id) REFERENCES public.users(id)
 );
-
--- Create courses table
-CREATE TABLE IF NOT EXISTS courses (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  title TEXT NOT NULL,
-  description TEXT,
-  instructor_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
+CREATE TABLE public.enrollments (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  student_id uuid NOT NULL,
+  course_id uuid NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT enrollments_pkey PRIMARY KEY (id),
+  CONSTRAINT enrollments_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id),
+  CONSTRAINT enrollments_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.users(id)
 );
-
--- Create lessons table
-CREATE TABLE IF NOT EXISTS lessons (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  video_url TEXT NOT NULL,
-  duration INTEGER, -- Duration in seconds
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
+CREATE TABLE public.lessons (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  course_id uuid NOT NULL,
+  title text NOT NULL,
+  video_url text NOT NULL,
+  duration integer,
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT lessons_pkey PRIMARY KEY (id),
+  CONSTRAINT lessons_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id)
 );
-
--- Create enrollments table
-CREATE TABLE IF NOT EXISTS enrollments (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  student_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
-  UNIQUE(student_id, course_id)
+CREATE TABLE public.organizations (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  name text NOT NULL,
+  slug text NOT NULL UNIQUE,
+  description text,
+  logo_url text,
+  website text,
+  owner_id uuid NOT NULL,
+  is_active boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  thumbnail_url text,
+  category ARRAY,
+  sub_category ARRAY,
+  CONSTRAINT organizations_pkey PRIMARY KEY (id),
+  CONSTRAINT organizations_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.users(id)
 );
-
--- Create indexes
-CREATE INDEX IF NOT EXISTS courses_instructor_id_idx ON courses(instructor_id);
-CREATE INDEX IF NOT EXISTS lessons_course_id_idx ON lessons(course_id);
-CREATE INDEX IF NOT EXISTS enrollments_student_id_idx ON enrollments(student_id);
-CREATE INDEX IF NOT EXISTS enrollments_course_id_idx ON enrollments(course_id);
-
--- Enable Row Level Security
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE courses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE lessons ENABLE ROW LEVEL SECURITY;
-ALTER TABLE enrollments ENABLE ROW LEVEL SECURITY;
-
--- Profiles RLS Policies
-CREATE POLICY "Users can view their own profile"
-  ON profiles FOR SELECT
-  USING (auth.uid() = id);
-
-CREATE POLICY "Users can update their own profile"
-  ON profiles FOR UPDATE
-  USING (auth.uid() = id);
-
-CREATE POLICY "Super admins can view all profiles"
-  ON profiles FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND role = 'super_admin'
-    )
-  );
-
-CREATE POLICY "Super admins can update all profiles"
-  ON profiles FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND role = 'super_admin'
-    )
-  );
-
--- Courses RLS Policies
-CREATE POLICY "Anyone can view active courses"
-  ON courses FOR SELECT
-  USING (is_active = true);
-
-CREATE POLICY "Instructors can view their own courses"
-  ON courses FOR SELECT
-  USING (
-    instructor_id = auth.uid() OR
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND role = 'super_admin'
-    )
-  );
-
-CREATE POLICY "Instructors can create courses"
-  ON courses FOR INSERT
-  WITH CHECK (
-    instructor_id = auth.uid() AND
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND role IN ('admin', 'super_admin')
-    )
-  );
-
-CREATE POLICY "Instructors can update their own courses"
-  ON courses FOR UPDATE
-  USING (
-    instructor_id = auth.uid() OR
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND role = 'super_admin'
-    )
-  );
-
-CREATE POLICY "Instructors can delete their own courses"
-  ON courses FOR DELETE
-  USING (
-    instructor_id = auth.uid() OR
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND role = 'super_admin'
-    )
-  );
-
--- Lessons RLS Policies
-CREATE POLICY "Anyone can view lessons of active courses"
-  ON lessons FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM courses
-      WHERE courses.id = lessons.course_id AND courses.is_active = true
-    )
-  );
-
-CREATE POLICY "Instructors can view lessons of their courses"
-  ON lessons FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM courses
-      WHERE courses.id = lessons.course_id AND
-      (courses.instructor_id = auth.uid() OR
-       EXISTS (
-         SELECT 1 FROM profiles
-         WHERE id = auth.uid() AND role = 'super_admin'
-       ))
-    )
-  );
-
-CREATE POLICY "Instructors can create lessons for their courses"
-  ON lessons FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM courses
-      WHERE courses.id = lessons.course_id AND
-      courses.instructor_id = auth.uid() AND
-      EXISTS (
-        SELECT 1 FROM profiles
-        WHERE id = auth.uid() AND role IN ('admin', 'super_admin')
-      )
-    )
-  );
-
-CREATE POLICY "Instructors can update lessons of their courses"
-  ON lessons FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM courses
-      WHERE courses.id = lessons.course_id AND
-      (courses.instructor_id = auth.uid() OR
-       EXISTS (
-         SELECT 1 FROM profiles
-         WHERE id = auth.uid() AND role = 'super_admin'
-       ))
-    )
-  );
-
-CREATE POLICY "Instructors can delete lessons of their courses"
-  ON lessons FOR DELETE
-  USING (
-    EXISTS (
-      SELECT 1 FROM courses
-      WHERE courses.id = lessons.course_id AND
-      (courses.instructor_id = auth.uid() OR
-       EXISTS (
-         SELECT 1 FROM profiles
-         WHERE id = auth.uid() AND role = 'super_admin'
-       ))
-    )
-  );
-
--- Enrollments RLS Policies
-CREATE POLICY "Students can view their own enrollments"
-  ON enrollments FOR SELECT
-  USING (student_id = auth.uid());
-
-CREATE POLICY "Super admins can view all enrollments"
-  ON enrollments FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND role = 'super_admin'
-    )
-  );
-
-CREATE POLICY "Students can enroll in courses"
-  ON enrollments FOR INSERT
-  WITH CHECK (
-    student_id = auth.uid() AND
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND role = 'student'
-    )
-  );
-
--- Function to automatically create profile on user signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.profiles (id, name, role)
-  VALUES (
-    NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'name', NEW.email),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'student')::TEXT
-  );
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Trigger to create profile on user signup
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
+CREATE TABLE public.profiles (
+  id uuid NOT NULL,
+  name text,
+  role text NOT NULL DEFAULT 'student'::text CHECK (role = ANY (ARRAY['super_admin'::text, 'admin'::text, 'student'::text])),
+  theme text NOT NULL DEFAULT 'system'::text CHECK (theme = ANY (ARRAY['light'::text, 'dark'::text, 'system'::text])),
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  avatar_url text,
+  bio text,
+  institute_name text,
+  website text,
+  is_org_owner boolean DEFAULT false,
+  CONSTRAINT profiles_pkey PRIMARY KEY (id),
+  CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.users (
+  id uuid NOT NULL,
+  name text,
+  role text NOT NULL DEFAULT 'student'::text CHECK (role = ANY (ARRAY['super_admin'::text, 'admin'::text, 'student'::text])),
+  avatar_url text,
+  bio text,
+  theme text DEFAULT 'system'::text CHECK (theme = ANY (ARRAY['light'::text, 'dark'::text, 'system'::text])),
+  institute_name text,
+  website text,
+  is_org_owner boolean DEFAULT false,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  deleted_at timestamp without time zone,
+  email text,
+  gender text,
+  first_name text,
+  last_name text,
+  profile_picture_url text,
+  organization_id uuid,
+  is_verified boolean,
+  CONSTRAINT users_pkey PRIMARY KEY (id),
+  CONSTRAINT users_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id),
+  CONSTRAINT users_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id)
+);
