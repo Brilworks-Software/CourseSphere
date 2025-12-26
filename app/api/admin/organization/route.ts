@@ -54,6 +54,15 @@ export async function POST(req: NextRequest) {
   // Generate slug from name (lowercase, replace spaces with hyphens)
   const slug = body.name.trim().toLowerCase().replaceAll(" ", "-");
 
+  // Set default values for optional fields if not provided
+  const logo_url = body.logo_url ?? require("@/lib/utils").DEFAULT_AVATAR_URL;
+  const description = body.description ?? "";
+  const website = body.website ?? "";
+  const thumbnail_url = body.thumbnail_url ?? "";
+  const categories = body.categories ?? [];
+  const subcategories = body.subcategories ?? [];
+  const is_active = body.is_active ?? true;
+
   // Insert organization
   const { data: org, error: orgError } = await supabase
     .from("organizations")
@@ -61,8 +70,14 @@ export async function POST(req: NextRequest) {
       {
         name: body.name,
         slug,
-        logo_url: body.logo_url,
+        logo_url,
         owner_id: body.owner_id,
+        description,
+        website,
+        thumbnail_url,
+        category: categories,
+        sub_category: subcategories,
+        is_active,
       },
     ])
     .select()

@@ -250,9 +250,9 @@ export default function StudentSingleCourse({
       <div className="relative w-full superUltraWide-container max-h-76 overflow-hidden  rounded-2xl bg-muted mb-8">
         {course?.organization?.thumbnail_url && (
           <div className="w-full rounded-2xl ">
-            {course.organization.thumbnail_url ? (
+            {course.organization?.thumbnail_url ? (
               <img
-                src={course.organization.thumbnail_url}
+                src={course.organization?.thumbnail_url}
                 alt="Banner"
                 className="object-contain w-full h-full  "
               />
@@ -265,12 +265,12 @@ export default function StudentSingleCourse({
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent"></div>
         <div className="absolute bottom-4 left-6 w-full rounded-lg overflow-hidden">
-          {course.organization.logo_url && (
+          {course.organization?.logo_url && (
             <div>
               <p className="text-2xl">A Course By</p>
             <div className="flex items-center">
               <img
-                src={course.organization.logo_url}
+                src={course.organization?.logo_url}
                 alt={course.organization.name}
                 className="w-32 h-32 rounded-lg object-cover border-2 border-background shadow-lg bg-background"
                 style={{ boxShadow: "0 4px 24px 0 rgba(0,0,0,0.08)" }}

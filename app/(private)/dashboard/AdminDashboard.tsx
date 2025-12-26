@@ -130,7 +130,7 @@ export default function AdminDashboard() {
         <p className="text-muted-foreground mb-2 text-lg font-medium">
           No courses yet
         </p>
-        <p className="text-muted mb-6 text-sm">
+        <p className="text-muted-foreground mb-6 text-sm">
           Get started by creating your first course
         </p>
         {noCoursesButton}
