@@ -212,7 +212,7 @@ export async function userSignUp(
     type: "signup",
     email: email!,
     options: {
-      emailRedirectTo: `${baseUrl}/auth/verify-user?redirect=${baseUrl}/login`,
+      emailRedirectTo: `${baseUrl}/verify-user?redirect=${baseUrl}/login`,
     },
   });
 
@@ -229,7 +229,7 @@ export async function userSignUp(
     last_name: lastName ?? "",
     gender: gender ?? "",
     profile_picture_url,
-    role: role ?? "org_employee",
+    role: role ?? "student",
     organization_id: organizationId ?? null,
     is_verified: false,
     deleted_at: null,

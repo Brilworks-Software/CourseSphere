@@ -26,37 +26,6 @@ export async function POST(req: Request) {
     const response = NextResponse.json({ success: true });
     TokenManager.setTokens(tokenData, response);
 
-    // Update user invitation status if user_id is available
-    // if (user_id) {
-    //     try {
-    //         const supabase = await getSupabaseServer();
-    //         const { data: user, error: userError } = await supabase.from(
-    //             "user",
-    //         )
-    //             .update({ invitation_status: INVITATION_STATUS.ACCEPTED })
-    //             .eq("clerk_user_id", user_id)
-    //             .eq("isDeleted", false)
-    //             .single();
-
-    //         if (userError) {
-    //             console.error("verify-user-Error", userError);
-    //             // Don't fail the entire request if user update fails
-    //             // Just log the error and continue
-    //         } else {
-    //             console.log(
-    //                 "User invitation status updated successfully:",
-    //                 user,
-    //             );
-    //         }
-    //     } catch (updateError) {
-    //         console.error(
-    //             "Error updating user invitation status:",
-    //             updateError,
-    //         );
-    //         // Don't fail the entire request if user update fails
-    //     }
-    // }
-
     return response;
   } catch (err: any) {
     return NextResponse.json(
