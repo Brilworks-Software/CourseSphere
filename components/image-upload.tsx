@@ -237,7 +237,7 @@ export default function ImageUploadWithCrop({
           variant="outline"
           onClick={openDialog}
           disabled={disabled || uploading}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 h-32 w-full justify-center bg-input"
         >
           <ImageIcon className="w-5 h-5" />
           Upload Image

@@ -109,8 +109,6 @@ export default function StudentSingleCourse({
   // Redesigned UI: Org banner, logo, course thumbnail, vertical lessons, no hardcoded colors
   return (
     <div className="space-y-8">
-      
-
       {/* Course Thumbnail and Info */}
       <Card className="overflow-hidden">
         <div className="flex flex-col md:flex-row relative">
@@ -246,44 +244,41 @@ export default function StudentSingleCourse({
         </div>
       </div>
 
-{/* Organization Banner */}
+      {/* Organization Banner */}
       <div className="relative w-full superUltraWide-container max-h-76 overflow-hidden  rounded-2xl bg-muted mb-8">
-        {course?.organization?.thumbnail_url && (
-          <div className="w-full rounded-2xl ">
-            {course.organization?.thumbnail_url ? (
-              <img
-                src={course.organization?.thumbnail_url}
-                alt="Banner"
-                className="object-contain w-full h-full  "
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                No banner image
-              </div>
-            )}
-          </div>
-        )}
+        <div className="w-full rounded-2xl ">
+          <img
+            src={
+              course?.organization?.thumbnail_url
+                ? course.organization.thumbnail_url
+                // : "https://ryqoufhmjoxlbwozmhxv.supabase.co/storage/v1/object/public/assets-bucket/public/thumbnails/1766731358001_thumnail%202.jpg"
+            : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSNDKb6szpfNfLfPHEk6VIVryrF3k3XJJWPw&s"
+              }
+            alt="Banner"
+            className="object-contain w-full h-full  "
+          />
+        </div>
         <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent"></div>
         <div className="absolute bottom-4 left-6 w-full rounded-lg overflow-hidden">
           {course.organization?.logo_url && (
             <div>
               <p className="text-2xl">A Course By</p>
-            <div className="flex items-center">
-              <img
-                src={course.organization?.logo_url}
-                alt={course.organization.name}
-                className="w-32 h-32 rounded-lg object-cover border-2 border-background shadow-lg bg-background"
-                style={{ boxShadow: "0 4px 24px 0 rgba(0,0,0,0.08)" }}
-              />
-              <div className="ml-4">
-                <div className="font-bold text-lg sm:text-2xl text-foreground">
-                  {course.organization.name}
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  Org slug: {course.organization.slug}
+              <div className="flex items-center">
+                <img
+                  src={course.organization?.logo_url}
+                  alt={course.organization.name}
+                  className="w-32 h-32 rounded-lg object-cover border-2 border-background shadow-lg bg-background"
+                  style={{ boxShadow: "0 4px 24px 0 rgba(0,0,0,0.08)" }}
+                />
+                <div className="ml-4">
+                  <div className="font-bold text-lg sm:text-2xl text-foreground">
+                    {course.organization.name}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Org slug: {course.organization.slug}
+                  </div>
                 </div>
               </div>
-            </div>
             </div>
           )}
         </div>

@@ -1,9 +1,9 @@
 import Link from "next/link";
 import * as React from "react";
 import { Course, UserRole } from "@/lib/types";
-import { Card, CardTitle, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, User, Building2, Tag } from "lucide-react";
+import { BookOpen, Tag } from "lucide-react";
 
 export type Context =
   | "public"

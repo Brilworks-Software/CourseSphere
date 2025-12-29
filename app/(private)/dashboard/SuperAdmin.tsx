@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import Loader from "@/components/loader";
+
+import { Skeleton } from "@/components/ui/skeleton";
 import { BookOpen, Users, GraduationCap, Building2, Video } from "lucide-react";
 
 const statsConfig = [
@@ -98,8 +99,12 @@ export default function SuperAdminDashboard() {
                 <Badge variant="outline">{stat.badge}</Badge>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-foreground">
-                  {loading ? <Loader /> : stats[stat.key] ?? 0}
+                <div className="text-3xl font-bold text-foreground min-h-10 flex items-center">
+                  {loading ? (
+                    <Skeleton className="w-16 h-8" />
+                  ) : (
+                    stats[stat.key] ?? 0
+                  )}
                 </div>
               </CardContent>
             </Card>

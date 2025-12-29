@@ -117,13 +117,18 @@ export default function OrganizationSettingsPage() {
       return;
     }
     setCreating(true);
+    // Use generateAvatarUrl if orgName is available
+    const { generateAvatarUrl, DEFAULT_AVATAR_URL } = require("@/lib/utils");
+    const logo_url = orgName.trim()
+      ? generateAvatarUrl(orgName.trim())
+      : DEFAULT_AVATAR_URL;
     const res = await fetch("/api/admin/organization", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: orgName.trim(),
         owner_id: user?.id,
-        logo_url: require("@/lib/utils").DEFAULT_AVATAR_URL,
+        logo_url,
       }),
     });
     if (!res.ok) {
