@@ -8,7 +8,6 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
 import { Dropzone, DropzoneEmptyState } from "@/components/kibo-ui/dropzone";
@@ -247,14 +246,14 @@ export default function ImageUploadWithCrop({
       {/* Dialog for image upload/crop */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         {/* Constrain dialog to viewport and center content; enable internal scrolling */}
-        <DialogContent className="sm:max-w-[90vw] w-fit max-h-[85vh] overflow-auto flex flex-col items-center gap-4 p-4">
+        <DialogContent className="sm:max-w-[90vw] w-fit max-h-[85vh] overflow-auto flex flex-col items-center gap-4 p-4" disableOutsideClose showCloseButton={true}>
           <DialogTitle className="sr-only">Image Upload</DialogTitle>
 
           {/* 1. NO FILE → SHOW DROPZONE */}
           {!rawFile && (
             <div className="w-full ">
               <Dropzone
-                className="w-full p-6"
+                className="w-full h-96 min-w-lg p-6"
                 accept={{ "image/*": [] }}
                 maxFiles={1}
                 onDrop={(f) => handleDrop(f)}
