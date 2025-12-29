@@ -148,7 +148,7 @@ export function CreateCourseForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-6 bg-card rounded-lg shadow p-6"
+      className="space-y-6 bg-card border-border rounded-lg shadow-lg p-6"
     >
       {error && (
         <div className="rounded-md bg-destructive/10 p-4">
