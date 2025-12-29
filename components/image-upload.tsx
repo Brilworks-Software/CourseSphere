@@ -105,18 +105,8 @@ export default function ImageUploadWithCrop({
     const file = files?.[0];
     if (!file) return;
 
-    console.log("[ImageUpload] handleDrop", {
-      name: file.name,
-      size: file.size,
-      type: file.type,
-    });
-
     if (file.size > MAX_SIZE) {
       alert(`File too large! Limit: ${maxSizeMB}MB`);
-      console.warn("[ImageUpload] file too large", {
-        size: file.size,
-        MAX_SIZE,
-      });
       return;
     }
 
@@ -128,18 +118,10 @@ export default function ImageUploadWithCrop({
   // APPLY CROPPED IMAGE → upload or preview
   // ------------------------------------------------------
   const handleCropFinish = async (base64: string) => {
-    console.log(
-      "[ImageUpload] handleCropFinish received base64 length",
-      base64?.length
-    );
     setCroppedImage(base64);
 
     // convert base64 → file
     const file = base64ToFile(base64, rawFile?.name || "image.png");
-    console.log("[ImageUpload] handleCropFinish converted to file", {
-      fileName: file?.name,
-      fileSize: file?.size,
-    });
     setCroppedFile(file); // <-- store for upload
     // Do not close dialog here
   };
@@ -147,16 +129,9 @@ export default function ImageUploadWithCrop({
   // Upload cropped image to Supabase Storage
   const handleSupabaseUpload = async () => {
     if (!croppedFile) {
-      console.warn(
-        "[ImageUpload] handleSupabaseUpload aborted: no croppedFile"
-      );
       return;
     }
     setUploading(true);
-    console.log("[ImageUpload] handleSupabaseUpload start", {
-      name: croppedFile.name,
-      size: croppedFile.size,
-    });
     try {
       const filePath = `public/thumbnails/${Date.now()}_${croppedFile.name}`;
       const { data, error } = await supabase.storage
@@ -169,14 +144,9 @@ export default function ImageUploadWithCrop({
         .getPublicUrl(filePath);
       const publicUrl = urlData?.publicUrl;
       if (!publicUrl) throw new Error("Failed to get public URL");
-      console.log("[ImageUpload] uploaded to supabase", {
-        publicUrl,
-        filePath,
-      });
       onChange(publicUrl, croppedFile);
       closeDialog();
     } catch (err) {
-      console.error("[ImageUpload] upload failed", err);
       alert("Upload failed: " + (err as Error).message);
     } finally {
       setUploading(false);
@@ -187,7 +157,6 @@ export default function ImageUploadWithCrop({
   // REMOVE IMAGE
   // ------------------------------------------------------
   const resetAll = () => {
-    console.log("[ImageUpload] resetAll invoked");
     setRawFile(null);
     setCroppedImage(null);
     onChange("");
@@ -215,12 +184,10 @@ export default function ImageUploadWithCrop({
 
   // Open dialog when user clicks trigger
   const openDialog = () => {
-    console.log("[ImageUpload] openDialog");
     setDialogOpen(true);
   };
   // Close dialog on cancel, reset, or upload success
   const closeDialog = () => {
-    console.log("[ImageUpload] closeDialog");
     setDialogOpen(false);
     setRawFile(null);
     setCroppedImage(null);
@@ -239,11 +206,8 @@ export default function ImageUploadWithCrop({
           {/* Only render Image if src is a valid non-empty string */}
           {croppedImage || value ? (
             <img
-               src={croppedImage || value || undefined}
+              src={croppedImage || value || undefined}
               alt="Preview"
-              // width={80}
-              // height={80}
-              // style={{ width: "100%"}}
               className="rounded-md border object-cover w-1/2"
             />
           ) : null}
@@ -273,7 +237,7 @@ export default function ImageUploadWithCrop({
           variant="outline"
           onClick={openDialog}
           disabled={disabled || uploading}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 h-32 w-full justify-center bg-input"
         >
           <ImageIcon className="w-5 h-5" />
           Upload Image
@@ -283,12 +247,12 @@ export default function ImageUploadWithCrop({
       {/* Dialog for image upload/crop */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         {/* Constrain dialog to viewport and center content; enable internal scrolling */}
-        <DialogContent className="!max-w-[90vw] max-h-[85vh] overflow-auto flex flex-col items-center gap-4 p-4">
+        <DialogContent className="sm:max-w-[90vw] w-fit max-h-[85vh] overflow-auto flex flex-col items-center gap-4 p-4">
           <DialogTitle className="sr-only">Image Upload</DialogTitle>
 
           {/* 1. NO FILE → SHOW DROPZONE */}
           {!rawFile && (
-            <div className="w-full max-w-[900px]">
+            <div className="w-full ">
               <Dropzone
                 className="w-full p-6"
                 accept={{ "image/*": [] }}
@@ -329,7 +293,7 @@ export default function ImageUploadWithCrop({
 
           {/* 3. After crop, show preview and upload button */}
           {croppedImage && croppedFile && (
-            <div className="flex flex-col items-center gap-4 w-full max-w-[700px]">
+            <div className="flex flex-col items-center gap-4 w-full ">
               {/* Thumbnails: keep small to avoid pushing layout */}
               {croppedImage ? (
                 <img
@@ -339,21 +303,18 @@ export default function ImageUploadWithCrop({
                   // style={{ width: 240, height: "auto", maxWidth: "100%" }}
                 />
               ) : null}
-              <Button
-                onClick={handleSupabaseUpload}
-                disabled={uploading}
-                className="w-full max-w-[400px]"
-              >
-                {uploading ? "Uploading..." : "Upload Image"}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={closeDialog}
-                disabled={uploading}
-                className="w-full max-w-[400px]"
-              >
-                Cancel
-              </Button>
+              <div className="flex w-full gap-2 flex-col md:flex-row justify-center">
+                <Button onClick={handleSupabaseUpload} disabled={uploading}>
+                  {uploading ? "Uploading..." : "Upload Image"}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={closeDialog}
+                  disabled={uploading}
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>

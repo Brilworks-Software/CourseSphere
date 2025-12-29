@@ -71,7 +71,6 @@ CREATE TABLE public.users (
   id uuid NOT NULL,
   name text,
   role text NOT NULL DEFAULT 'student'::text CHECK (role = ANY (ARRAY['super_admin'::text, 'admin'::text, 'student'::text])),
-  avatar_url text,
   bio text,
   theme text DEFAULT 'system'::text CHECK (theme = ANY (ARRAY['light'::text, 'dark'::text, 'system'::text])),
   institute_name text,

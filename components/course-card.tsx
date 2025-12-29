@@ -1,9 +1,9 @@
 import Link from "next/link";
 import * as React from "react";
 import { Course, UserRole } from "@/lib/types";
-import { Card, CardTitle, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, User, Building2, Tag } from "lucide-react";
+import { BookOpen, Tag } from "lucide-react";
 
 export type Context =
   | "public"
@@ -46,7 +46,7 @@ export function CourseCard({
 
   return (
     <Card
-      className={`rounded-2xl border bg-card shadow-sm hover:shadow-lg transition-shadow duration-200 ${className}`}
+      className={`rounded-2xl border bg-card shadow-sm hover:shadow-lg transition-shadow duration-200 max-w-sm ${className}`}
     >
       <Link href={href} className="block">
         <div className="relative rounded-t-2xl overflow-hidden">
@@ -57,19 +57,25 @@ export function CourseCard({
           />
         </div>
         <div className="p-4">
-          <div className="flex items-center gap-2 mb-2 min-h-8">
-            {org?.logo_url && (
-              <img
-                src={org.logo_url}
-                alt={org.name}
-                className="w-6 h-6 rounded-full border bg-card object-cover"
-              />
-            )}
-            {org?.name && (
-              <span className="text-xs text-muted-foreground font-medium truncate">
-                {org.name}
-              </span>
-            )}
+          <div className="flex items-center justify-between gap-2 mb-2 min-h-8">
+            <div className="flex items-center gap-2">
+              {org?.logo_url && (
+                <img
+                  src={org.logo_url}
+                  alt={org.name}
+                  className="w-6 h-6 rounded-full border bg-card object-cover"
+                />
+              )}
+              {org?.name && (
+                <span className="text-sm font-medium truncate">
+                  {org.name}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <BookOpen className="h-4 w-4 mr-1" />
+              <span className="text-xs">{lessonsCount} lessons</span>
+            </div>
           </div>
           <div className="flex items-center gap-2 mb-2">
             <h2 className="text-base font-semibold line-clamp-2 flex-1 text-card-foreground">
@@ -79,7 +85,7 @@ export function CourseCard({
               {price}
             </span>
           </div>
-          <div className="text-xs text-muted-foreground line-clamp-2 mb-2 min-h-10">
+          <div className="text-xs text-muted-foreground line-clamp-2 mb-2 min-h-8 max-h-8 overflow-hidden">
             {desc}
           </div>
           <div className="flex flex-wrap gap-2 mb-2 min-h-7">
@@ -95,22 +101,6 @@ export function CourseCard({
                 {subCategory}
               </Badge>
             )}
-            {org?.name && (
-              <Badge variant="default" className="flex items-center gap-1">
-                <Building2 className="h-3 w-3" />
-                {org.name}
-              </Badge>
-            )}
-          </div>
-          <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
-            <div className="flex items-center gap-1">
-              <BookOpen className="h-4 w-4 mr-1" />
-              <span>{lessonsCount} lessons</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <User className="h-4 w-4 mr-1" />
-              <span>{course.instructor?.name || "Unknown"}</span>
-            </div>
           </div>
         </div>
       </Link>

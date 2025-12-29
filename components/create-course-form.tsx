@@ -17,6 +17,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { useUserContext } from "@/app/provider/user-context";
+import { PlusCircle } from "lucide-react";
 
 export function CreateCourseForm() {
   const { user } = useUserContext();
@@ -45,6 +46,42 @@ export function CreateCourseForm() {
     setLoading(true);
     setError(null);
 
+    // Validate all required fields
+    if (!title.trim()) {
+      setError("Course title is required.");
+      setLoading(false);
+      return;
+    }
+    if (!description.trim()) {
+      setError("Course description is required.");
+      setLoading(false);
+      return;
+    }
+    if (!thumbnailUrl) {
+      setError("Course thumbnail is required.");
+      setLoading(false);
+      return;
+    }
+    if (!primaryCategory) {
+      setError("Primary category is required.");
+      setLoading(false);
+      return;
+    }
+    if (!subCategory) {
+      setError("Sub-category is required.");
+      setLoading(false);
+      return;
+    }
+    if (typeof isActive !== "boolean") {
+      setError("Course active status is required.");
+      setLoading(false);
+      return;
+    }
+    if (typeof isFree !== "boolean") {
+      setError("Course free/paid status is required.");
+      setLoading(false);
+      return;
+    }
     // Validate price if not free
     if (!isFree && (!price || isNaN(Number(price)) || Number(price) <= 0)) {
       setError("Please enter a valid price for paid courses.");
@@ -86,6 +123,28 @@ export function CreateCourseForm() {
     }
   };
 
+  // Show organization creation prompt if user has no organization
+  if (!user?.organization_id) {
+    return (
+      <div className="text-center py-16">
+        <div className="mb-4">
+          <span className="inline-block rounded-full bg-muted p-4">
+            <PlusCircle className="h-8 w-8 text-muted-foreground" />
+          </span>
+        </div>
+        <p className="text-muted-foreground mb-2 text-lg font-medium">
+          You need to create an Organization first
+        </p>
+        <p className="text-muted-foreground mb-6 text-sm">
+          Before creating a course, please create your organization.
+        </p>
+        <Button onClick={() => router.push("/organization")}>
+          Create your Organization
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -119,11 +178,12 @@ export function CreateCourseForm() {
           htmlFor="description"
           className="block text-sm font-medium text-muted-foreground mb-2"
         >
-          Description
+          Description *
         </Label>
         <Textarea
           id="description"
           rows={4}
+          required
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Enter course description"
@@ -138,11 +198,19 @@ export function CreateCourseForm() {
           disabled={loading}
           aspectRatio={"landscape"}
         />
+        {/* Hidden input for required validation */}
+        <input
+          type="text"
+          value={thumbnailUrl}
+          required
+          readOnly
+          style={{ display: "none" }}
+        />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="w-full">
-          <Label className="block text-sm font-medium mb-1">Category</Label>
+          <Label className="block text-sm font-medium mb-1">Category *</Label>
           <Select
             value={primaryCategory}
             onValueChange={(val) => {
@@ -150,6 +218,7 @@ export function CreateCourseForm() {
               setSubCategory("");
             }}
             disabled={loading}
+            required
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select category" />
@@ -165,11 +234,14 @@ export function CreateCourseForm() {
         </div>
 
         <div className="w-full">
-          <Label className="block text-sm font-medium mb-1">Sub-category</Label>
+          <Label className="block text-sm font-medium mb-1">
+            Sub-category *
+          </Label>
           <Select
             value={subCategory}
             onValueChange={setSubCategory}
             disabled={!primaryCategory || loading}
+            required
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select sub-category" />
@@ -193,6 +265,7 @@ export function CreateCourseForm() {
             onCheckedChange={(v) => setIsFree(Boolean(v))}
             className="h-4 w-4 text-accent focus:ring-accent border-muted rounded"
             disabled={loading}
+            required
           />
           <Label
             htmlFor="is_free"
@@ -208,6 +281,7 @@ export function CreateCourseForm() {
             onCheckedChange={(v) => setIsActive(Boolean(v))}
             className="h-4 w-4 text-accent focus:ring-accent border-muted rounded"
             disabled={loading}
+            required
           />
           <Label
             htmlFor="is_active"
@@ -224,7 +298,7 @@ export function CreateCourseForm() {
           htmlFor="price"
           className="block text-sm font-medium text-muted-foreground mb-2"
         >
-          Price (in ₹)
+          Price (in ₹) {isFree ? "" : "*"}
         </Label>
         <Input
           id="price"

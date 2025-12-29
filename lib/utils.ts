@@ -17,7 +17,7 @@ export const ACCEPTED_IMAGE_TYPES = [
 ];
 
 // App's primary color (hex, without #)
-export const APP_PRIMARY_COLOR = "065f74"; // Use your theme's primary color
+export const APP_PRIMARY_COLOR = "00b9c3"; // Use your theme's primary color
 
 /**
  * Generate a default avatar URL using name and background color.

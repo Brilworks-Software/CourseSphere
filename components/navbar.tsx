@@ -55,7 +55,7 @@ const Navbar = () => {
     { href: "/courses", label: "Courses" },
   ];
 
-  if (user?.role === "admin" || user?.role === "super_admin") {
+  if (user?.role === "admin") {
     links.push(
       { href: "/courses/new", label: "Create Course" },
       { href: "/organization", label: "Manage Organization" }
