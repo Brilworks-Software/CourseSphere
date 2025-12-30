@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import * as React from "react";
+import { usePathname } from "next/navigation";
 import { Course, UserRole } from "@/lib/types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +45,8 @@ export function CourseCard({
   const price = course.is_free ? "Free" : `₹${course.price}`;
   const category = course.primary_category;
   const subCategory = course.sub_category;
-  const href = `/courses/${course.id}`;
+  const pathname = usePathname();
+  const href = pathname === "/" ? "/dashboard" : `/courses/${course.id}`;
 
   return (
     <Card

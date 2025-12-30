@@ -15,6 +15,10 @@ export async function GET(request: Request) {
     const page = Number(searchParams.get("page") || 1);
     const perPage = Number(searchParams.get("perPage") || 12);
 
+    // User info for ownership logic
+    const userId = searchParams.get("userId");
+    const role = searchParams.get("role");
+
     const supabase = createClient();
 
     // Join organization info and lessons count for each course
@@ -78,13 +82,21 @@ export async function GET(request: Request) {
     }
 
     // Map organization info to a top-level key for each course
-    const courses = (data || []).map((course: any) => {
+    let courses = (data || []).map((course: any) => {
       const { organization, ...rest } = course;
       return {
         ...rest,
         organization: organization || null,
       };
     });
+
+    // If admin, add isOwned key for each course
+    if (role === "admin" && userId) {
+      courses = courses.map((course: any) => ({
+        ...course,
+        isOwned: course.instructor_id === userId,
+      }));
+    }
 
     return NextResponse.json({
       courses,
