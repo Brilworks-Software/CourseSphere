@@ -54,11 +54,43 @@ export async function GET(request: Request) {
       .eq("student_id", studentId)
       .single();
 
-    // Compose response: course with organization, lessons (full), lessons count, enrollment
+    // Fetch instructor details (user + optional profile) and attach to response
+    let instructor = null;
+    try {
+      if (course?.instructor_id) {
+        const { data: instructorUser, error: instructorUserError } =
+          await supabase
+            .from("users")
+            .select(
+              "id, name, email, first_name, last_name, profile_picture_url, role, bio, organization_id"
+            )
+            .eq("id", course.instructor_id)
+            .single();
+
+        const { data: instructorProfile } = await supabase
+          .from("profiles")
+          .select("avatar_url, institute_name, website")
+          .eq("id", course.instructor_id)
+          .single();
+
+        if (!instructorUserError && instructorUser) {
+          instructor = {
+            ...instructorUser,
+            profile: instructorProfile || null,
+          };
+        }
+      }
+    } catch {
+      // Ignore instructor lookup errors; keep instructor as null
+      instructor = null;
+    }
+
+    // Compose response: course with organization, lessons (full), lessons count, enrollment, instructor
     return NextResponse.json({
       ...course,
       lessons,
       enrollment: enrollment || null,
+      instructor,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
