@@ -49,6 +49,11 @@ export default function StudentSingleCourse({
   const [enrollment, setEnrollment] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  // new thumbnail states for improved UX
+  const [isThumbOpen, setIsThumbOpen] = useState(false);
+  const [thumbLoading, setThumbLoading] = useState(true);
+  const [thumbError, setThumbError] = useState(false);
+
   useEffect(() => {
     // Only fetch if user and id are available
     if (!user || !id) return;
@@ -62,6 +67,16 @@ export default function StudentSingleCourse({
         setLoading(false);
       });
   }, [id, user]);
+
+  // close modal on Escape
+  useEffect(() => {
+    if (!isThumbOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsThumbOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isThumbOpen]);
 
   if (loading || !user || !id) {
     return (
@@ -78,28 +93,201 @@ export default function StudentSingleCourse({
     ? lessons?.find((l: any) => l.id === lessonId)
     : lessons?.[0];
 
-  // If student and not enrolled, show enrollment option
+  // compute total duration (seconds) and formatter
+  const totalDurationSeconds =
+    lessons?.reduce((acc: number, l: any) => acc + (l?.duration || 0), 0) || 0;
+
+  const formatDuration = (secs: number) => {
+    if (!secs) return "0:00";
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${String(s).padStart(2, "0")}`;
+  };
+
+  // If student and not enrolled, show enrollment option (enhanced)
   if (user?.role === "student" && !isEnrolled) {
+    const instr = course?.instructor || {};
+    const instructorName =
+      instr?.first_name || instr?.name || instr?.email || "Unknown Instructor";
+    const instructorEmail = instr?.email || "";
+    const instructorAvatar = instr?.profile_picture_url || instr?.avatar_url;
+
+    // compute first lesson preview and formatted duration
+    const firstLesson = lessons?.[0];
+    const firstLessonDuration = firstLesson?.duration
+      ? `${Math.floor(firstLesson.duration / 60)}:${String(
+          firstLesson.duration % 60
+        ).padStart(2, "0")}`
+      : null;
+
     return (
       <div className=" px-4 sm:px-6 lg:px-8 py-8">
-        <Card className="max-w-2xl mx-auto">
+        <Card className=" mx-auto">
+          {/* UPDATED: show thumbnail next to title/description */}
           <CardHeader>
-            <CardTitle>{course.title}</CardTitle>
-            {/* optional description */}
-            <p className="text-sm text-muted-foreground mt-2">
-              {course.description || "No description available"}
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-4 space-y-1 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                {/* Use only user data, not instructor/profile */}
-                <span>Instructor: {course.instructor_name || "Unknown"}</span>
+            <div className="flex items-start gap-4">
+              {course?.thumbnail_url ? (
+                <img
+                  src={course.thumbnail_url}
+                  alt={course?.title || "Course Thumbnail"}
+                  loading="lazy"
+                  onError={(e) => {
+                    // fallback to a neutral placeholder if image fails
+                    (e.currentTarget as HTMLImageElement).src =
+                      "https://ui-avatars.com/api/?name=Course&background=ddd&color=555&size=128";
+                  }}
+                  className="h-62 object-cover rounded-md flex-shrink-0"
+                />
+              ) : (
+                <div className="w-28 h-20 bg-muted flex items-center justify-center rounded-md text-sm text-muted-foreground flex-shrink-0">
+                  No thumbnail
+                </div>
+              )}
+
+              <div>
+                <CardTitle>{course.title}</CardTitle>
+                <p className="text-sm text-muted-foreground mt-2">
+                  {course.description || "No description available"}
+                </p>
               </div>
-              <div>Lessons: {lessons?.length || 0}</div>
             </div>
-            <EnrollButton courseId={id} userId={user.id} />
+          </CardHeader>
+
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Instructor Card — expanded with contact and bio */}
+              <div className="col-span-1 border rounded-lg p-4">
+                <div className="flex items-start gap-4">
+                  <img
+                    src={
+                      instructorAvatar ||
+                      "https://ui-avatars.com/api/?name=I&background=ddd&color=555&size=64"
+                    }
+                    alt={instructorName}
+                    className="w-16 h-16 rounded-full object-cover"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <div className="font-semibold text-foreground">
+                          {instructorName}
+                        </div>
+                        {instr?.last_name && (
+                          <div className="text-xs text-muted-foreground">
+                            {instr.last_name}
+                          </div>
+                        )}
+                        {instructorEmail && (
+                          <div className="text-sm text-muted-foreground mt-1">
+                            <a
+                              href={`mailto:${instructorEmail}`}
+                              className="underline"
+                            >
+                              {instructorEmail}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Instructor
+                      </div>
+                    </div>
+
+                    <div className="text-xs text-muted-foreground mt-3">
+                      {instr?.bio || "No bio available"}
+                    </div>
+
+                    <div className="mt-3 flex gap-2">
+                      {instructorEmail && (
+                        <a
+                          href={`mailto:${instructorEmail}`}
+                          className="text-sm underline text-primary"
+                          aria-label={`Contact ${instructorName}`}
+                        >
+                          Contact
+                        </a>
+                      )}
+                      {instr?.id && (
+                        <Link
+                          href={`/instructors/${instr.id}`}
+                          className="text-sm underline text-muted-foreground"
+                        >
+                          View profile
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Course Summary — enhanced */}
+              <div className="col-span-2 md:col-span-2 border rounded-lg p-4 flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <div>
+                    <div className="text-sm text-muted-foreground">Lessons</div>
+                    <div className="font-medium text-foreground">
+                      {lessons?.length || 0}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-muted-foreground">
+                      Total Duration
+                    </div>
+                    <div className="font-medium text-foreground">
+                      {formatDuration(totalDurationSeconds)}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-muted-foreground">Price</div>
+                    <div className="font-medium text-foreground">
+                      {course?.is_free ? (
+                        <span className="text-green-600">Free</span>
+                      ) : (
+                        <span>₹{course?.price}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* First lesson preview */}
+                <div className="mt-2 border rounded-md p-3 bg-muted/50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm text-muted-foreground">
+                        Preview lesson
+                      </div>
+                      <div className="font-medium text-foreground">
+                        {firstLesson
+                          ? `${firstLesson.title}`
+                          : "No preview available"}
+                      </div>
+                      {firstLessonDuration && (
+                        <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                          <Clock className="h-3 w-3 inline" />
+                          {firstLessonDuration}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-2">
+                  <EnrollButton
+                    courseId={id}
+                    userId={user.id}
+                    isFree={!!course?.is_free}
+                    price={course?.price}
+                  />
+                  <div className="text-xs text-muted-foreground mt-2">
+                    {course?.is_free
+                      ? "This course is free — enroll now to get immediate access."
+                      : "Secure checkout — you will get full access to all lessons after enrolling."}
+                  </div>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -113,13 +301,79 @@ export default function StudentSingleCourse({
       <Card className="overflow-hidden">
         <div className="flex flex-col md:flex-row relative">
           {/* Course Thumbnail */}
-          {course?.thumbnail_url && (
+          {/* CLICKABLE, LAZY loading thumbnail with placeholder and modal */}
+          {course?.thumbnail_url ? (
+            <div className="md:w-1/2 w-full aspect-video bg-muted flex items-center justify-center relative">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setIsThumbOpen(true)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") setIsThumbOpen(true);
+                }}
+                aria-label="Open course thumbnail"
+                className="w-full h-full cursor-pointer relative"
+              >
+                {thumbLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="h-10 w-10 animate-pulse rounded bg-muted-foreground/30" />
+                  </div>
+                )}
+                <img
+                  src={course.thumbnail_url}
+                  alt={course?.title || "Course Thumbnail"}
+                  loading="lazy"
+                  onLoad={() => setThumbLoading(false)}
+                  onError={() => {
+                    setThumbLoading(false);
+                    setThumbError(true);
+                  }}
+                  className="object-cover w-full h-full rounded-none"
+                />
+                {!thumbError && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="bg-black/40 text-white px-3 py-1 rounded-full text-sm">
+                      View
+                    </div>
+                  </div>
+                )}
+                {thumbError && (
+                  <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
+                    Image unavailable
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
             <div className="md:w-1/2 w-full aspect-video bg-muted flex items-center justify-center">
-              <img
-                src={course.thumbnail_url}
-                alt={course?.title || "Course Thumbnail"}
-                className="object-cover w-full h-full rounded-none"
-              />
+              <div className="text-sm text-muted-foreground">No thumbnail</div>
+            </div>
+          )}
+
+          {/* Thumbnail lightbox/modal */}
+          {isThumbOpen && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+              onClick={() => setIsThumbOpen(false)}
+              aria-hidden={!isThumbOpen}
+            >
+              <div
+                className="max-w-5xl max-h-[80vh] w-full p-2 relative"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => setIsThumbOpen(false)}
+                  aria-label="Close thumbnail"
+                  className="absolute top-2 right-2 text-white text-2xl leading-none"
+                >
+                  ×
+                </button>
+                <img
+                  src={course.thumbnail_url}
+                  alt={course?.title || "Course Thumbnail"}
+                  className="object-contain w-full h-full rounded-lg shadow-lg bg-black"
+                />
+              </div>
             </div>
           )}
           <div className=" flex-1 p-6 flex flex-col gap-3">
@@ -251,9 +505,9 @@ export default function StudentSingleCourse({
             src={
               course?.organization?.thumbnail_url
                 ? course.organization.thumbnail_url
-                // : "https://ryqoufhmjoxlbwozmhxv.supabase.co/storage/v1/object/public/assets-bucket/public/thumbnails/1766731358001_thumnail%202.jpg"
-            : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSNDKb6szpfNfLfPHEk6VIVryrF3k3XJJWPw&s"
-              }
+                : // : "https://ryqoufhmjoxlbwozmhxv.supabase.co/storage/v1/object/public/assets-bucket/public/thumbnails/1766731358001_thumnail%202.jpg"
+                  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSNDKb6szpfNfLfPHEk6VIVryrF3k3XJJWPw&s"
+            }
             alt="Banner"
             className="object-contain w-full h-full  "
           />
@@ -290,19 +544,29 @@ export default function StudentSingleCourse({
 function EnrollButton({
   courseId,
   userId,
+  isFree,
+  price,
 }: {
   courseId: string;
   userId: string;
+  isFree?: boolean;
+  price?: number | null;
 }) {
   const [loading, setLoading] = useState(false);
   const handleEnroll = async () => {
     setLoading(true);
-    await fetch("/api/student/courses/enroll", {
-      method: "POST",
-      body: JSON.stringify({ courseId, userId }),
-      headers: { "Content-Type": "application/json" },
-    });
-    window.location.reload();
+    try {
+      await fetch("/api/student/courses/enroll", {
+        method: "POST",
+        body: JSON.stringify({ courseId, userId }),
+        headers: { "Content-Type": "application/json" },
+      });
+      // reload to reflect enrollment immediately
+      window.location.reload();
+    } catch (err) {
+      // silence errors for now; could show toast
+      setLoading(false);
+    }
   };
   return (
     <Button
@@ -311,7 +575,13 @@ function EnrollButton({
       onClick={handleEnroll}
       disabled={loading}
     >
-      {loading ? "Enrolling..." : "Enroll in Course"}
+      {loading
+        ? "Enrolling..."
+        : isFree
+        ? "Enroll for Free"
+        : price
+        ? `Enroll — ₹${price}`
+        : "Enroll in Course"}
     </Button>
   );
 }
