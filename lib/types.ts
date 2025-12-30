@@ -20,6 +20,7 @@ export interface Course {
   _count?: {
     lessons: number
   }
+  isOwned?: boolean
 }
 
 export interface Lesson {

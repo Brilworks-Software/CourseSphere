@@ -46,7 +46,14 @@ export function CourseCard({
   const category = course.primary_category;
   const subCategory = course.sub_category;
   const pathname = usePathname();
-  const href = pathname === "/" ? "/dashboard" : `/courses/${course.id}`;
+  const baseHref = pathname === "/" ? "/dashboard" : `/courses/${course.id}`;
+  // Only append the ow=1 query param when linking to the course detail page
+  // and when the current user owns the course. This keeps other navigation
+  // (like going to /dashboard) unchanged.
+  const href =
+    course?.isOwned && baseHref.startsWith("/courses/")
+      ? `${baseHref}?ow=1`
+      : baseHref;
 
   return (
     <Card
@@ -71,9 +78,15 @@ export function CourseCard({
                 />
               )}
               {org?.name && (
-                <span className="text-sm font-medium truncate">
-                  {org.name}
-                </span>
+                <span className="text-sm font-medium truncate">{org.name}</span>
+              )}
+              {course?.isOwned && (
+                <Badge
+                  variant="outline"
+                  className="text-xs px-2 py-1 rounded whitespace-nowrap"
+                >
+                  Your Course
+                </Badge>
               )}
             </div>
             <div className="flex items-center gap-1 text-muted-foreground">

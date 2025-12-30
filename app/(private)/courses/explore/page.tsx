@@ -181,7 +181,7 @@ export default function CourseExplorePage() {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
               {Array.from({ length: filters.perPage || 6 }).map((_, i) => (
                 <div
                   key={i}
@@ -215,7 +215,7 @@ export default function CourseExplorePage() {
             <div>No products found.</div>
           ) : (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2  lg:grid-cols-3 gap-6">
                 {products.map((course: any) => (
                   <CourseCard key={course.id} course={course} />
                 ))}
