@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import CourseCard from "@/components/course-card";
 import { useUserContext } from "@/app/provider/user-context";
 import { CourseFilters } from "../(private)/courses/explore/filter";
+import { LandingHeader } from "@/components/landing-header";
 
 type Product = any;
 
@@ -123,150 +124,155 @@ export default function CourseExplorePage() {
   }
 
   return (
-    <div className="p-4 container mx-auto">
-      {/* Banner Section */}
-      <div className="w-full h-44 rounded-2xl bg-card mb-6 relative overflow-hidden">
-        <div className="w-full mx-auto rounded-full top-[-50%] h-44 absolute bg-primary blur-2xl"></div>
-        <div className=" absolute bottom-0 left-0 p-4">
-          <h1 className="text-5xl text-secondary-foreground font-bold">
-            Courses
-          </h1>
-          <p>
-            Learn from a variety of courses to enhance your skills and
-            knowledge.
-          </p>
-        </div>
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-3">
-        <div className="md:w-80 w-full md:shrink-0">
-          <div className="md:sticky md:top-8">
-            <CourseFilters
-              filters={filters}
-              setFilters={(newF: any) =>
-                setFilters((prev: any) => ({ ...prev, ...newF, page: 1 }))
-              }
-            />
+    <div>
+      <LandingHeader />
+      <div className="p-4 container mx-auto">
+        {/* Banner Section */}
+        <div className="w-full h-44 rounded-2xl bg-card mb-6 relative overflow-hidden">
+          <div className="w-full mx-auto rounded-full top-[-50%] h-44 absolute bg-primary blur-2xl"></div>
+          <div className=" absolute bottom-0 left-0 p-4">
+            <h1 className="text-5xl text-secondary-foreground font-bold">
+              Courses
+            </h1>
+            <p>
+              Learn from a variety of courses to enhance your skills and
+              knowledge.
+            </p>
           </div>
         </div>
 
-        <div className="flex-1">
-          {/* top bar: sort + per page */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <label className="text-sm">Sort:</label>
-              <Select value={filters.sort} onValueChange={setSort}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Sort" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Newest</SelectItem>
-                  <SelectItem value="oldest">Oldest</SelectItem>
-                  <SelectItem value="price_asc">Price: Low → High</SelectItem>
-                  <SelectItem value="price_desc">Price: High → Low</SelectItem>
-                  <SelectItem value="title_asc">Title A → Z</SelectItem>
-                  <SelectItem value="title_desc">Title Z → A</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <label className="text-sm">Per page:</label>
-              <Select
-                value={String(filters.perPage)}
-                onValueChange={(v) => setPerPage(Number(v))}
-              >
-                <SelectTrigger className="w-24">
-                  <SelectValue placeholder="Per page" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="6">6</SelectItem>
-                  <SelectItem value="12">12</SelectItem>
-                  <SelectItem value="24">24</SelectItem>
-                  <SelectItem value="48">48</SelectItem>
-                </SelectContent>
-              </Select>
+        <div className="flex flex-col md:flex-row gap-3">
+          <div className="md:w-80 w-full md:shrink-0">
+            <div className="md:sticky md:top-8">
+              <CourseFilters
+                filters={filters}
+                setFilters={(newF: any) =>
+                  setFilters((prev: any) => ({ ...prev, ...newF, page: 1 }))
+                }
+              />
             </div>
           </div>
 
-          {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
-              {Array.from({ length: filters.perPage || 6 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="border rounded-xl shadow-sm flex flex-col p-4 bg-background animate-pulse"
+          <div className="flex-1">
+            {/* top bar: sort + per page */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <label className="text-sm">Sort:</label>
+                <Select value={filters.sort} onValueChange={setSort}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Sort" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Newest</SelectItem>
+                    <SelectItem value="oldest">Oldest</SelectItem>
+                    <SelectItem value="price_asc">Price: Low → High</SelectItem>
+                    <SelectItem value="price_desc">
+                      Price: High → Low
+                    </SelectItem>
+                    <SelectItem value="title_asc">Title A → Z</SelectItem>
+                    <SelectItem value="title_desc">Title Z → A</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <label className="text-sm">Per page:</label>
+                <Select
+                  value={String(filters.perPage)}
+                  onValueChange={(v) => setPerPage(Number(v))}
                 >
-                  {/* Image skeleton */}
-                  <div className="w-full relative">
-                    <Skeleton className="w-full aspect-square rounded-md mb-2" />
-                    <Skeleton className="absolute top-2 right-2 w-8 h-8 rounded-full" />
-                  </div>
-                  {/* Content skeleton */}
-                  <div className="mt-3 flex flex-col gap-2 justify-between h-full">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Skeleton className="h-6 w-32 mb-1" />
-                      </div>
-                      <Skeleton className="h-4 w-40 mb-1" />
-                      <Skeleton className="h-4 w-24" />
-                    </div>
-                    <div className="flex items-center justify-between mt-1">
-                      <Skeleton className="h-8 w-20" />
-                      <Skeleton className="h-8 w-24" />
-                    </div>
-                  </div>
-                </div>
-              ))}
+                  <SelectTrigger className="w-24">
+                    <SelectValue placeholder="Per page" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="6">6</SelectItem>
+                    <SelectItem value="12">12</SelectItem>
+                    <SelectItem value="24">24</SelectItem>
+                    <SelectItem value="48">48</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          ) : error ? (
-            <div className="text-red-500">Error: {error}</div>
-          ) : products.length === 0 ? (
-            <div>No products found.</div>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
-                {products.map((course: any) => (
-                  <CourseCard key={course.id} course={course} />
+
+            {loading ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
+                {Array.from({ length: filters.perPage || 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="border rounded-xl shadow-sm flex flex-col p-4 bg-background animate-pulse"
+                  >
+                    {/* Image skeleton */}
+                    <div className="w-full relative">
+                      <Skeleton className="w-full aspect-square rounded-md mb-2" />
+                      <Skeleton className="absolute top-2 right-2 w-8 h-8 rounded-full" />
+                    </div>
+                    {/* Content skeleton */}
+                    <div className="mt-3 flex flex-col gap-2 justify-between h-full">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-6 w-32 mb-1" />
+                        </div>
+                        <Skeleton className="h-4 w-40 mb-1" />
+                        <Skeleton className="h-4 w-24" />
+                      </div>
+                      <div className="flex items-center justify-between mt-1">
+                        <Skeleton className="h-8 w-20" />
+                        <Skeleton className="h-8 w-24" />
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
-
-              {/* Pagination */}
-              <div className="flex items-center justify-between mt-6">
-                <div>
-                  <Button
-                    variant={"secondary"}
-                    onClick={() => goToPage(filters.page - 1)}
-                    disabled={filters.page <= 1}
-                  >
-                    Prev
-                  </Button>
-                  <Button
-                    variant={"secondary"}
-                    onClick={() => goToPage(filters.page + 1)}
-                    disabled={filters.page >= meta.totalPages}
-                  >
-                    Next
-                  </Button>
+            ) : error ? (
+              <div className="text-red-500">Error: {error}</div>
+            ) : products.length === 0 ? (
+              <div>No products found.</div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+                  {products.map((course: any) => (
+                    <CourseCard key={course.id} course={course} />
+                  ))}
                 </div>
 
-                <div className="text-sm">
-                  Page {meta.page} of {meta.totalPages} • {meta.total} items
-                </div>
+                {/* Pagination */}
+                <div className="flex items-center justify-between mt-6">
+                  <div>
+                    <Button
+                      variant={"secondary"}
+                      onClick={() => goToPage(filters.page - 1)}
+                      disabled={filters.page <= 1}
+                    >
+                      Prev
+                    </Button>
+                    <Button
+                      variant={"secondary"}
+                      onClick={() => goToPage(filters.page + 1)}
+                      disabled={filters.page >= meta.totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
 
-                <div className="flex gap-2 items-center">
-                  {/* quick jump to page */}
-                  <input
-                    type="number"
-                    min={1}
-                    max={meta.totalPages}
-                    value={filters.page}
-                    onChange={(e) => goToPage(Number(e.target.value))}
-                    className="w-20 px-2 py-1 border rounded"
-                  />
+                  <div className="text-sm">
+                    Page {meta.page} of {meta.totalPages} • {meta.total} items
+                  </div>
+
+                  <div className="flex gap-2 items-center">
+                    {/* quick jump to page */}
+                    <input
+                      type="number"
+                      min={1}
+                      max={meta.totalPages}
+                      value={filters.page}
+                      onChange={(e) => goToPage(Number(e.target.value))}
+                      className="w-20 px-2 py-1 border rounded"
+                    />
+                  </div>
                 </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

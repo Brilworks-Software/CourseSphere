@@ -275,7 +275,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.auth.signOut();
     setUser(null);
     setIsLoading(false);
-    router.replace("/login");
+    router.replace("/");
   };
 
   const refetchUser = useCallback(async () => {

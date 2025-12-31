@@ -9,7 +9,7 @@ export default function StudentDashboard() {
         <div className="flex items-center">
           <div>
             <h1 className="text-3xl font-bold text-foreground">
-              Student Dashboard
+               Dashboard
             </h1>
             <p className="mt-2 text-muted-foreground">
               Continue learning from your enrolled courses
@@ -24,7 +24,7 @@ export default function StudentDashboard() {
           <h2 className="text-lg font-semibold text-foreground">
             My Enrolled Courses
           </h2>
-          <Link href="/courses" className="text-sm text-accent hover:underline">
+          <Link href="/courses" className="text-sm hover:underline">
             Browse all courses
           </Link>
         </div>
