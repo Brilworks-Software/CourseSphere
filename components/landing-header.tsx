@@ -24,13 +24,7 @@ export function LandingHeader() {
             href="/course"
             className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
           >
-            Courses
-          </Link>
-          <Link
-            href="/course"
-            className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-          >
-            Browse
+            Explore Courses
           </Link>
         </nav>
 
