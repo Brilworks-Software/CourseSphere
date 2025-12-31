@@ -263,7 +263,7 @@ export function CreateCourseForm() {
             id="is_free"
             checked={isFree}
             onCheckedChange={(v) => setIsFree(Boolean(v))}
-            className="h-4 w-4 text-accent focus:ring-accent border-muted rounded"
+            className="h-4 w-4  focus:ring-accent border-muted rounded"
             disabled={loading}
             required
           />
@@ -279,7 +279,7 @@ export function CreateCourseForm() {
             id="is_active"
             checked={isActive}
             onCheckedChange={(v) => setIsActive(Boolean(v))}
-            className="h-4 w-4 text-accent focus:ring-accent border-muted rounded"
+            className="h-4 w-4  focus:ring-accent border-muted rounded"
             disabled={loading}
             required
           />

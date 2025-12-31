@@ -63,7 +63,7 @@ export default function EnrolledCoursesClient() {
         <p className="text-muted-foreground mb-4">
           You haven't enrolled in any courses yet.
         </p>
-        <Link href="/courses" className="text-accent hover:underline">
+        <Link href="/courses" className=" hover:underline">
           Browse available courses
         </Link>
       </div>

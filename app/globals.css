@@ -51,6 +51,13 @@ body {
   --sidebar-accent-foreground: oklch(0.25 0.02 210);
   --sidebar-border: oklch(0.92 0.005 240);
   --sidebar-ring: oklch(0.62 0.14 200);
+
+  /* Chart palette (was missing, mapped from existing theme colors) */
+  --chart-1: var(--primary);
+  --chart-2: var(--sidebar-ring);
+  --chart-3: var(--accent);
+  --chart-4: var(--secondary);
+  --chart-5: var(--muted);
 }
 
 .dark {
@@ -64,7 +71,7 @@ body {
   --popover-foreground: oklch(0.97 0.01 240);
 
   /* 🔷 Brand Teal */
-  --primary: oklch(0.70 0.15 200);
+  --primary: oklch(0.7 0.15 200);
   --primary-foreground: oklch(0.15 0.01 240);
 
   --secondary: oklch(23.008% 0.02053 195.89);
@@ -76,24 +83,30 @@ body {
   --accent: oklch(0.28 0.04 210);
   --accent-foreground: oklch(0.97 0.01 240);
 
-  --destructive: oklch(0.68 0.20 25);
+  --destructive: oklch(0.68 0.2 25);
   --destructive-foreground: oklch(1 0 0);
 
   --border: oklch(1 0 0 / 10%);
   --input: oklch(15.434% 0.00002 271.152);
-  --ring: oklch(0.70 0.15 200);
+  --ring: oklch(0.7 0.15 200);
 
   /* Sidebar */
   --sidebar: oklch(0.18 0.01 240);
   --sidebar-foreground: oklch(0.97 0.01 240);
-  --sidebar-primary: oklch(0.70 0.15 200);
+  --sidebar-primary: oklch(0.7 0.15 200);
   --sidebar-primary-foreground: oklch(0.15 0.01 240);
   --sidebar-accent: oklch(0.26 0.03 210);
   --sidebar-accent-foreground: oklch(0.97 0.01 240);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.70 0.15 200);
-}
+  --sidebar-ring: oklch(0.7 0.15 200);
 
+  /* Chart palette for dark theme */
+  --chart-1: var(--primary);
+  --chart-2: var(--sidebar-ring);
+  --chart-3: var(--accent);
+  --chart-4: var(--secondary);
+  --chart-5: var(--muted);
+}
 
 @theme inline {
   --color-background: var(--background);
@@ -115,11 +128,11 @@ body {
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
+  --color-chart-1: var(--primary);
+  --color-chart-2: var(--sidebar-ring);
+  --color-chart-3: var(--accent);
+  --color-chart-4: var(--secondary);
+  --color-chart-5: var(--muted);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -156,29 +169,68 @@ body {
 }
 /* Blob backgrounds that respect theme colors and opacity */
 .bg-theme-blob-1 {
-  background: radial-gradient(circle, color-mix(in srgb, var(--color-primary) 35%, transparent 0%), transparent 45%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--color-primary) 35%, transparent 0%),
+    transparent 45%
+  );
 }
 .bg-theme-blob-2 {
-  background: radial-gradient(circle, color-mix(in srgb, var(--color-chart-3) 30%, transparent 0%), transparent 50%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--color-chart-3) 30%, transparent 0%),
+    transparent 50%
+  );
 }
 .bg-theme-blob-3 {
-  background: radial-gradient(circle, color-mix(in srgb, var(--color-chart-5) 28%, transparent 0%), transparent 55%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--color-chart-5) 28%, transparent 0%),
+    transparent 55%
+  );
 }
 .theme-gradient {
-  background: linear-gradient(150deg, var(--color-primary) 0%, var(--color-chart-1) 50%, var(--color-sidebar-ring) 100%);
+  background: linear-gradient(
+    150deg,
+    var(--color-primary) 0%,
+    var(--color-chart-1) 50%,
+    var(--color-sidebar-ring) 100%
+  );
 }
 /* Heading text gradient using theme vars */
-.text-theme-gradient {
+/* .theme-text-gradient { */
+ .text-theme-gradient {
   background-image: linear-gradient(150deg, var(--color-primary) 0%, var(--color-chart-1) 50%, var(--color-sidebar-ring) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  -webkit-text-fill-color: transparent; /* ensures webkit browsers render transparent text for clip */
   background-size: 200% 200%;
+  background-repeat: no-repeat;
+  display: inline-block; /* ensures background-clip:text behaves more consistently */
 }
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  
+  /* Smooth theme transitions - apply to all color properties */
+  *,
+  *::before,
+  *::after {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+  }
+  
+  /* Disable transitions for elements that should change instantly */
+  .no-transition,
+  .no-transition *,
+  [data-no-transition],
+  [data-no-transition] * {
+    transition: none !important;
+  }
+  
   body {
     @apply bg-background text-foreground;
     font-weight: 600;
@@ -188,20 +240,33 @@ body {
   }
 
   .bg-dot-pattern {
-    background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+    background-image: radial-gradient(
+      circle,
+      var(--border) 1px,
+      transparent 1px
+    );
     background-size: 24px 24px;
   }
 }
 
 @keyframes blob {
-  0% { transform: translate(0px, 0px) scale(1); }
-  33% { transform: translate(30px, -50px) scale(1.1); }
-  66% { transform: translate(-20px, 20px) scale(0.9); }
-  100% { transform: translate(0px, 0px) scale(1); }
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
 }
 
 @keyframes gradient-x {
-  0%, 100% {
+  0%,
+  100% {
     background-size: 200% 200%;
     background-position: left center;
   }
@@ -215,9 +280,9 @@ body {
   animation: blob 7s infinite;
 }
 
-.animate-gradient-x {
+/* .animate-gradient-x {
   animation: gradient-x 15s ease infinite;
-}
+} */
 
 .animation-delay-2000 {
   animation-delay: 2s;
@@ -239,24 +304,76 @@ body {
   display: block;
   height: 5px;
   width: 5px;
-  content: '';
+  content: "";
   -webkit-animation: spin 1s infinite;
-          animation: spin 1s infinite;
+  animation: spin 1s infinite;
   border-radius: 100%;
-  -webkit-box-shadow: 20px 0 0 5px var(--primary), 0 20px 0 5px var(--foreground), 0 -20px 0 5px var(--foreground), -20px 0 0 5px var(--primary);
-          box-shadow: 20px 0 0 5px var(--primary), 0 20px 0 5px var(--foreground), 0 -20px 0 5px var(--foreground), -20px 0 0 5px var(--primary); }
+  -webkit-box-shadow: 20px 0 0 5px var(--primary),
+    0 20px 0 5px var(--foreground), 0 -20px 0 5px var(--foreground),
+    -20px 0 0 5px var(--primary);
+  box-shadow: 20px 0 0 5px var(--primary), 0 20px 0 5px var(--foreground),
+    0 -20px 0 5px var(--foreground), -20px 0 0 5px var(--primary);
+}
 
 @-webkit-keyframes spin {
   to {
     -webkit-transform: rotate(360deg);
-            transform: rotate(360deg); } }
+    transform: rotate(360deg);
+  }
+}
 
 @keyframes spin {
   to {
     -webkit-transform: rotate(360deg);
-            transform: rotate(360deg); } }
+    transform: rotate(360deg);
+  }
+}
 
 .superUltraWide-container {
   aspect-ratio: 38 / 10;
   width: 100%; /* The height will be calculated automatically based on the width */
 }
+
+@keyframes marquee-left {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes marquee-right {
+  0% {
+    transform: translate3d(-50%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-marquee-left {
+  animation: marquee-left linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-right {
+  animation: marquee-right linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-left:hover,
+.animate-marquee-right:hover {
+  animation-play-state: paused;
+}
+
+/* Helper for JS-driven/framer-motion marquee inner container */
+.marquee-inner {
+  display: flex;
+  gap: 1rem;
+  /* ensure items form a continuous row; min-widths are applied per item in component */
+  align-items: center;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+

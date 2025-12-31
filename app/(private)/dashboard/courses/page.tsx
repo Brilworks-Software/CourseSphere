@@ -58,7 +58,7 @@ export default function CoursesManagementPage() {
       <div className="text-center py-12 bg-card rounded-lg shadow">
         <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
         <p className="text-muted-foreground mb-4">No courses found.</p>
-        <Link href="/courses/new" className="text-accent hover:underline">
+        <Link href="/courses/new" className=" hover:underline">
           Create your first course
         </Link>
       </div>
