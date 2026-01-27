@@ -10,10 +10,7 @@ if (!user) {
     return <div className="h-dvh w-full flex justify-center items-center"><Loader /></div>;
   }
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-foreground mb-6">
-        Create New Course
-      </h1>
+    <div className="max-w-[1800px] mx-auto">
       <CreateCourseForm />
     </div>
   );
