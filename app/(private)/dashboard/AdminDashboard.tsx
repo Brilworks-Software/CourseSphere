@@ -25,16 +25,30 @@ export default function AdminDashboard() {
       const supabase = createClient();
 
       // Get instructor's courses
-      const { data: courses, count: coursesCount } = await supabase
+      const { data: fetchedCourses, count: fetchedCount } = await supabase
         .from("courses")
-        .select("*, lessons(count)", { count: "exact" })
+        .select(
+          "*, organization:organization_id(id, name, slug, logo_url, thumbnail_url), lessons(count)",
+          { count: "exact" }
+        )
         .eq("instructor_id", user.id)
         .order("created_at", { ascending: false });
 
-      setCourses(courses || []);
-      setCoursesCount(coursesCount || 0);
+      // Map organization to top-level key (same shape as list API)
+      const mappedCourses = (fetchedCourses || []).map((course: any) => {
+        const { organization, ...rest } = course;
+        return {
+          ...rest,
+          organization: organization || null,
+          // add isOwned flag so each course object matches list route shape
+          isOwned: course.instructor_id === user.id,
+        };
+      });
 
-      const courseIds = (courses || []).map((c: any) => c.id);
+      setCourses(mappedCourses);
+      setCoursesCount(fetchedCount || 0);
+
+      const courseIds = (mappedCourses || []).map((c: any) => c.id);
 
       // Get total videos count
       let videosCount = 0;

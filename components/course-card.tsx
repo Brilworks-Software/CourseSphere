@@ -22,6 +22,7 @@ interface CourseCardProps {
   context?: Context;
   isEnrolled?: boolean;
   className?: string;
+  isMyCourse?: boolean;
   onEnroll?: () => void;
 }
 
@@ -36,6 +37,7 @@ export function CourseCard({
   context = "public",
   isEnrolled = false,
   className = "",
+  isMyCourse = false,
   onEnroll,
 }: CourseCardProps) {
   const title = course?.title || "Untitled";

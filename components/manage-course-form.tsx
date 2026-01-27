@@ -46,6 +46,19 @@ export function ManageCourseForm({ course }: { course: Course }) {
     (course as any).price ? String((course as any).price) : ""
   );
 
+  // NEW: billing type (one_time | monthly)
+  const [billingType, setBillingType] = useState<string>(
+    (course as any).billing_type ?? "one_time"
+  );
+
+  // NEW: Razorpay payment connect toggle and key
+  const [isRazorpayConnected, setIsRazorpayConnected] = useState<boolean>(
+    (course as any).razorpay_connected ?? false
+  );
+  const [razorpayKey, setRazorpayKey] = useState<string>(
+    (course as any).razorpay_key ?? ""
+  );
+
   // derive selected primary category to show its children as sub-options
   const selectedCategory = COURSE_CATEGORIES.find(
     (c) => c.value === primaryCategory
@@ -59,6 +72,13 @@ export function ManageCourseForm({ course }: { course: Course }) {
     // Validate price if not free
     if (!isFree && (!price || isNaN(Number(price)) || Number(price) <= 0)) {
       setError("Please enter a valid price for paid courses.");
+      setLoading(false);
+      return;
+    }
+
+    // NEW: validate razorpay key when enabled and course is paid
+    if (!isFree && isRazorpayConnected && !razorpayKey) {
+      setError("Please provide the Razorpay Key ID to enable Razorpay payments.");
       setLoading(false);
       return;
     }
@@ -78,6 +98,10 @@ export function ManageCourseForm({ course }: { course: Course }) {
           sub_category: subCategory === "" ? null : subCategory,
           is_free: isFree,
           price: isFree ? 0 : Number(price),
+          // NEW: include billing type and razorpay info
+          billing_type: billingType,
+          razorpay_connected: isRazorpayConnected && !isFree ? isRazorpayConnected : false,
+          razorpay_key: !isFree && isRazorpayConnected ? razorpayKey : null,
         }),
       });
 
@@ -95,7 +119,7 @@ export function ManageCourseForm({ course }: { course: Course }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 overflow-auto">
       {error && (
         <Alert variant="destructive" className="flex items-start">
           <AlertTriangle className="mr-2 h-4 w-4 shrink-0" />
@@ -191,7 +215,15 @@ export function ManageCourseForm({ course }: { course: Course }) {
           <Checkbox
             id="is_free"
             checked={isFree}
-            onCheckedChange={(v) => setIsFree(Boolean(v))}
+            onCheckedChange={(v) => {
+              const val = Boolean(v);
+              setIsFree(val);
+              // When marking as free, clear/reset any Razorpay config so it isn't submitted accidentally
+              if (val) {
+                setIsRazorpayConnected(false);
+                setRazorpayKey("");
+              }
+            }}
             className="h-4 w-4 text-accent focus:ring-accent border-muted rounded"
             disabled={loading}
           />
@@ -225,8 +257,36 @@ export function ManageCourseForm({ course }: { course: Course }) {
           htmlFor="price"
           className="block text-sm font-medium text-muted-foreground mb-2"
         >
-          Price (in ₹)
+          {/* NEW: dynamic label depending on billing type */}
+          {billingType === "monthly" ? "Price per month (in ₹)" : "Price (in ₹)"}
         </Label>
+
+        {/* NEW: Billing type radio buttons */}
+        <div className="flex items-center space-x-4 mb-2">
+          <label className="inline-flex items-center space-x-2">
+            <input
+              type="radio"
+              name="billingType"
+              value="one_time"
+              checked={billingType === "one_time"}
+              onChange={() => setBillingType("one_time")}
+              disabled={loading}
+            />
+            <span className="text-sm">One-time</span>
+          </label>
+          <label className="inline-flex items-center space-x-2">
+            <input
+              type="radio"
+              name="billingType"
+              value="monthly"
+              checked={billingType === "monthly"}
+              onChange={() => setBillingType("monthly")}
+              disabled={loading}
+            />
+            <span className="text-sm">Monthly</span>
+          </label>
+        </div>
+
         <input
           id="price"
           type="number"
@@ -234,12 +294,54 @@ export function ManageCourseForm({ course }: { course: Course }) {
           step="1"
           value={isFree ? "" : price}
           onChange={(e) => setPrice(e.target.value)}
-          placeholder="Enter course price"
+          placeholder={billingType === "monthly" ? "Enter monthly price" : "Enter course price"}
           disabled={isFree || loading}
           required={!isFree}
           className="w-full border rounded px-3 py-2"
         />
       </div>
+
+      {/* NEW: Razorpay enable toggle and key input - only for paid courses */}
+      {!isFree && (
+        <div className="space-y-2">
+          <div className="flex items-center">
+            <Checkbox
+              id="razorpay"
+              checked={isRazorpayConnected}
+              onCheckedChange={(v) => setIsRazorpayConnected(Boolean(v))}
+              className="h-4 w-4 text-accent focus:ring-accent border-muted rounded"
+              disabled={loading}
+            />
+            <Label
+              htmlFor="razorpay"
+              className="ml-2 block text-sm text-muted-foreground"
+            >
+              Enable Razorpay payments
+            </Label>
+          </div>
+
+          {isRazorpayConnected && (
+            <div>
+              <Label htmlFor="razorpay_key" className="block text-sm font-medium mb-1">
+                Razorpay Key ID
+              </Label>
+              <input
+                id="razorpay_key"
+                type="text"
+                value={razorpayKey}
+                onChange={(e) => setRazorpayKey(e.target.value)}
+                placeholder="rzp_test_XXXXXXXXXXXX"
+                disabled={loading}
+                className="w-full border rounded px-3 py-2"
+                required={isRazorpayConnected}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Add your Razorpay Key ID to enable payments. You can also connect via your dashboard later.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       <Button type="submit" disabled={loading}>
         {loading ? (

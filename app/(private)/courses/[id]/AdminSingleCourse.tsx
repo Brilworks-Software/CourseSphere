@@ -124,7 +124,7 @@ export default function AdminSingleCourse({ id }: { id: string }) {
                         <Pencil className="mr-2 h-4 w-4" /> Edit Course
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-7xl sm:max-w-7xl">
+                    <DialogContent className="max-w-7xl sm:max-w-7xl max-h-[90vh] overflow-y-auto">
                       <DialogTitle>Edit Course</DialogTitle>
                       <ManageCourseForm course={course} />
                     </DialogContent>
