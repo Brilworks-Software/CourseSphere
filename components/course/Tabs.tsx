@@ -117,7 +117,6 @@ export default function Tabs({ course, instructor, organization }: any) {
                     <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
                       <li>Use specific steps to immediately increase productivity.</li>
                       <li>Avoid common time-management traps.</li>
-                      <li>Build real-world projects and gain practical experience.</li>
                     </ul>
                   </div>
 
