@@ -57,20 +57,18 @@ export function VideoPlayer({ lesson, lessons, courseId }: VideoPlayerProps) {
 
   return (
     <div>
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-          {currentLesson.title}
-        </h2>
-      </div>
-      <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden mb-4">
+      <div className="aspect-video bg-gray-900 rounded-t-lg overflow-hidden mb-4">
         <AdvancedVideo
           cldVid={video}
           controls
           className="w-full h-full"
         />
       </div>
-      <div className="mt-4">
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      <div className="mt-4 p-3">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          {currentLesson.title}
+        </h2>
+        {/* <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Next Lessons:
         </h3>
         <div className="space-y-2">
@@ -93,7 +91,7 @@ export function VideoPlayer({ lesson, lessons, courseId }: VideoPlayerProps) {
                 {l.title}
               </button>
             ))}
-        </div>
+        </div> */}
       </div>
     </div>
   )
