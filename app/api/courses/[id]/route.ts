@@ -3,90 +3,47 @@ import { NextResponse } from "next/server";
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { id } = await context.params;
     const supabase = await createClient();
-
-    // Check if user has access
-
-    // Fetch course with organization details and lessons count
-    const { data: course, error: fetchError } = await supabase
-      .from("courses")
-      .select(
-        `*,
-        organization:organization_id (
-          id, name, slug, logo_url, thumbnail_url
-        ),
-        lessons:lessons(count)
-      `
-      )
-      .eq("id", id)
-      .single();
-
-    if (fetchError) {
-      return NextResponse.json({ error: fetchError.message }, { status: 400 });
-    }
-
-    if (!course) {
-      return NextResponse.json({ error: "Course not found" }, { status: 404 });
-    }
 
     const body = await request.json();
 
-    // Normalize thumbnail: treat empty string as null, allow explicit null
-    const thumbnail =
-      body.thumbnail_url === ""
-        ? null
-        : body.thumbnail_url !== undefined
-        ? body.thumbnail_url
-        : course.thumbnail_url ?? null;
+    // Build updateFields from all possible fields in the body, matching DB schema
+    const updateFields: any = {
+      title: body.title,
+      subtitle: body.subtitle ?? null,
+      description: body.description ?? null,
+      language: body.language ?? null,
+      level: body.level ?? null,
+      is_active: body.is_active,
+      thumbnail_url: body.thumbnail_url ?? null,
+      primary_category: body.primary_category ?? null,
+      sub_category: body.sub_category ?? null,
+      status: body.status ?? null,
+      last_submitted_at: body.last_submitted_at ?? null,
+      published_at: body.published_at ?? null,
+      is_free: body.is_free,
+      price: body.price,
+      razorpay_connected: body.razorpay_connected ?? false,
+      razorpay_key: body.razorpay_key ?? null,
+      organization_id: body.organization_id ?? null,
+      instructor_id: body.instructor_id ?? null,
+      requirements: body.requirements ?? null,
+      expectations: body.expectations ?? null,              
+    };
 
-    // Normalize primary_category and sub_category, accept older "category" as fallback
-    const primary_category =
-      body.primary_category === ""
-        ? null
-        : body.primary_category !== undefined
-        ? body.primary_category
-        : body.category !== undefined
-        ? body.category
-        : course.primary_category ?? null;
-
-    const sub_category =
-      body.sub_category === ""
-        ? null
-        : body.sub_category !== undefined
-        ? body.sub_category
-        : course.sub_category ?? null;
-
-    // Handle is_free and price logic
-    const isFree = body.is_free === undefined ? course.is_free : body.is_free;
-    let price = 0;
-    if (!isFree && body.price !== undefined) {
-      price = body.price;
-    } else if (!isFree && course.price !== undefined) {
-      price = course.price;
-    }
+    console.log("PATCH updateFields:", updateFields);
 
     const { error: updateError } = await supabase
       .from("courses")
-      .update({
-        title: body.title,
-        description: body.description || null,
-        is_active:
-          body.is_active === undefined ? course.is_active : body.is_active,
-        // update thumbnail_url when provided (null clears it)
-        thumbnail_url: thumbnail,
-        // update categories
-        primary_category,
-        sub_category,
-        is_free: isFree,
-        price,
-      })
+      .update(updateFields)
       .eq("id", id);
 
     if (updateError) {
+      console.log("PATCH error:", updateError);
       return NextResponse.json({ error: updateError.message }, { status: 400 });
     }
 
@@ -111,7 +68,45 @@ export async function PATCH(
       );
     }
 
+    console.log("PATCH success, data:", updatedCourse);
     return NextResponse.json(updatedCourse);
+  } catch (error: any) {
+    console.log("PATCH exception:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function GET(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params;
+    const supabase = await createClient();
+
+    // Fetch course with organization details and lessons count
+    const { data: course, error } = await supabase
+      .from("courses")
+      .select(
+        `*,
+        organization:organization_id (
+          id, name, slug, logo_url, thumbnail_url
+        ),
+        lessons:lessons(count)
+      `
+      )
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    if (!course) {
+      return NextResponse.json({ error: "Course not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(course);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

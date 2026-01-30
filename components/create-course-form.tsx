@@ -3,7 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import dynamic from "next/dynamic";
+// Dynamically import MarkdownEditor (ssr: false)
+const MarkdownEditor = dynamic(() => import("@/components/MarkdownEditor"), { ssr: false });
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -392,19 +394,26 @@ export function CreateCourseForm() {
                     >
                       Description *
                     </Label>
-                    <Textarea
-                      id="description"
-                      rows={4}
-                      required
+                    <MarkdownEditor
                       value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Enter course description"
-                      ref={descriptionRef}
+                      onChange={setDescription}
+                      placeholder="Write a detailed course description..."
+                      textareaName="description"
+                    />
+                    {/* Hidden input for form validation */}
+                    <input
+                      type="text"
+                      value={description}
+                      required
+                      readOnly
+                      ref={descriptionRef as any}
+                      style={{ display: "none" }}
                     />
                   </div>
 
                   <div>
                     <ImageUploadWithCrop
+                    label="Banner"
                       value={thumbnailUrl}
                       onChange={(url) => setThumbnailUrl(url ?? "")}
                       showPreview={true}

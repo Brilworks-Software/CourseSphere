@@ -15,8 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-export function 
-AddLessonForm({ courseId }: { courseId: string }) {
+export function AddLessonForm({ courseId }: { courseId: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);

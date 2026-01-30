@@ -3,9 +3,11 @@
 
 @custom-variant dark (&:is(.dark *));
 body {
+  font-family: var(--font-inter) !important;
+}
+.tox-tinymce{
   font-family: var(--font-inter);
 }
-
 :root {
   /* Base */
   --background: oklch(99.7% 0.00426 198.556);
@@ -376,4 +378,106 @@ body {
   will-change: transform;
   transform: translate3d(0, 0, 0);
 }
+.EditorPreview p {
+  font-size: 14px;
+  line-height: 1.6;
+  font-weight: 400;
+}
 
+.EditorPreview h1 {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.EditorPreview h2 {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.EditorPreview h3 {
+  font-size: 16px;
+  font-weight: semi-bold;
+  margin-bottom: 0.4rem;
+}
+
+.EditorPreview h4 {
+  font-size: 14px;
+  font-weight: semi-bold;
+  margin-bottom: 0.4rem;
+}
+
+.EditorPreview h5 {
+  font-size: 13px;
+  font-weight: medium;
+  margin-bottom: 0.3rem;
+}
+
+.EditorPreview h6 {
+  font-size: 12px;
+  font-weight: medium;
+  margin-bottom: 0.3rem;
+}
+
+.EditorPreview ul,
+.EditorPreview ol,
+.EditorPreview menu {
+  list-style: disc;
+  padding-left: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.EditorPreview li {
+  margin-bottom: 0.25rem;
+}
+
+.EditorPreview strong {
+  font-weight: bold;
+}
+
+.EditorPreview em {
+  font-style: italic;
+}
+
+.EditorPreview u {
+  text-decoration: underline;
+}
+
+.EditorPreview a {
+  color: #3b82f6; /* Tailwind blue-500 */
+  text-decoration: underline;
+}
+
+.EditorPreview blockquote {
+  border-left: 2px solid #d1d5db; /* Tailwind gray-300 */
+  padding-left: 0.5rem;
+  font-style: italic;
+  color: #6b7280; /* Tailwind gray-500 */
+  margin-bottom: 0.5rem;
+}
+
+.EditorPreview img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.25rem;
+  margin: 0.5rem 0;
+}
+.EditorPreview code {
+  background-color: #f3f4f6; /* Tailwind gray-100 */
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Hide number input arrows (Firefox) */
+input[type="number"] {
+  -moz-appearance: textfield;
+}

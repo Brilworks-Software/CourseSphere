@@ -1,60 +1,76 @@
 import type { Course } from "@/lib/types";
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import ImageUploadWithCrop from "./image-upload";
-import { COURSE_CATEGORIES } from "@/app/util/course_category";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { PlusCircle, Check, XIcon, ChevronRight, Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle, ChevronLeft } from "lucide-react";
 import Link from "next/link";
-import Logo from "./logo";
+import DetailsCourseStep from "@/components/manage-course-form/DetailsCourseStep";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { BasicDetailsStep } from "./manage-course-form/BasicDetailsStep";
+import { PricingStep } from "./manage-course-form/PricingStep";
+import { CurriculumStep } from "./manage-course-form/CurriculumStep";
+import { toast } from "sonner";
+import AnnouncementStep from "./manage-course-form/AnnouncementStep";
 
 export function ManageCourseForm({ course }: { course: Course }) {
+  // Basic details
   const [title, setTitle] = useState(course.title);
+  const [subtitle, setSubtitle] = useState((course as any).subtitle ?? "");
   const [description, setDescription] = useState(course.description || "");
+  const [language, setLanguage] = useState((course as any).language ?? "en");
+  const [level, setLevel] = useState((course as any).level ?? "");
   const [isActive, setIsActive] = useState(course.is_active);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  // Billing type for PricingStep
+  const [billingType, setBillingType] = useState<string>((course as any).billing_type ?? "one_time");
 
-  // thumbnail and category states
-  const [thumbnailUrl, setThumbnailUrl] = useState<string>((course as any).thumbnail_url ?? "");
+  // Category details
   const [primaryCategory, setPrimaryCategory] = useState<string>((course as any).primary_category ?? "");
   const [subCategory, setSubCategory] = useState<string>((course as any).sub_category ?? "");
+
+  // Image fields
+  const [thumbnailUrl, setThumbnailUrl] = useState<string>((course as any).thumbnail_url ?? "");
+
+  // Status fields
+  const [status, setStatus] = useState((course as any).status ?? "draft");
+  const [lastSubmittedAt, setLastSubmittedAt] = useState((course as any).last_submitted_at ?? "");
+  const [publishedAt, setPublishedAt] = useState((course as any).published_at ?? "");
 
   // is_free and price
   const [isFree, setIsFree] = useState((course as any).is_free ?? true);
   const [price, setPrice] = useState((course as any).price ? String((course as any).price) : "");
 
-  // billing type
-  const [billingType, setBillingType] = useState<string>((course as any).billing_type ?? "one_time");
-
   // Razorpay
   const [isRazorpayConnected, setIsRazorpayConnected] = useState<boolean>((course as any).razorpay_connected ?? false);
   const [razorpayKey, setRazorpayKey] = useState<string>((course as any).razorpay_key ?? "");
 
+  // Add requirements and expectations fields
+  const [requirements, setRequirements] = useState((course as any).requirements ?? "");
+  const [expectations, setExpectations] = useState((course as any).expectations ?? "");
+
   // Stepper state: 0=Basic,1=Category,2=Pricing,3=Review
-  const [step, setStep] = useState<number>(0);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const stepParam = searchParams?.get("step");
+  const [step, setStep] = useState<number>(stepParam ? parseInt(stepParam, 10) : 0);
 
   // Refs for autofocus/select behavior
-  const titleRef = useRef<HTMLInputElement | null>(null);
-  const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
-  const priceRef = useRef<HTMLInputElement | null>(null);
-  const primarySelectRef = useRef<HTMLButtonElement | null>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  const priceRef = useRef<HTMLInputElement>(null);
+  const primarySelectRef = useRef<HTMLButtonElement>(null);
 
   const stepTitles = [
     "Basic details",
-    "Category",
     "Pricing & settings",
-    "Review",
+    "Curriculum",
+    "Details",
+    "Announcements",
   ];
 
-  const selectedCategory = COURSE_CATEGORIES.find((c) => c.value === primaryCategory);
+  // Removed unused selectedCategory and COURSE_CATEGORIES from parent
 
   // validate the current step before moving forward
   const validateStep = () => {
@@ -92,41 +108,79 @@ export function ManageCourseForm({ course }: { course: Course }) {
       return;
     }
 
-    try {
-      const response = await fetch(`/api/courses/${course.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title,
-          description,
-          is_active: isActive,
-          thumbnail_url: thumbnailUrl === "" ? null : thumbnailUrl,
-          primary_category: primaryCategory === "" ? null : primaryCategory,
-          sub_category: subCategory === "" ? null : subCategory,
-          is_free: isFree,
-          price: isFree ? 0 : Number(price),
-          billing_type: billingType,
-          razorpay_connected: isRazorpayConnected && !isFree ? isRazorpayConnected : false,
-          razorpay_key: !isFree && isRazorpayConnected ? razorpayKey : null,
-        }),
-      });
+    await toast.promise(
+      (async () => {
+        try {
+          const response = await fetch(`/api/courses/${course.id}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              id: course.id,
+              title,
+              subtitle,
+              description,
+              language,
+              level,
+              is_active: isActive,
+              thumbnail_url: thumbnailUrl === "" ? null : thumbnailUrl,
+              primary_category: primaryCategory === "" ? null : primaryCategory,
+              sub_category: subCategory === "" ? null : subCategory,
+              status,
+              last_submitted_at: lastSubmittedAt || null,
+              published_at: publishedAt || null,
+              is_free: isFree,
+              price: isFree ? 0 : Number(price),
+              razorpay_connected: isRazorpayConnected && !isFree ? isRazorpayConnected : false,
+              razorpay_key: !isFree && isRazorpayConnected ? razorpayKey : null,
+              organization_id: (course as any).organization_id || null,
+              instructor_id: (course as any).instructor_id || null,
+              requirements,
+              expectations,
+            }),
+          });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to update course");
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || "Failed to update course");
+          }
+
+          setLoading(false);
+          router.refresh();
+        } catch (err: any) {
+          setError(err.message);
+          setLoading(false);
+          throw err;
+        }
+      })(),
+      {
+        loading: "Updating course...",
+        success: "Course updated successfully!",
+        error: "Failed to update course.",
       }
-
-      setLoading(false);
-      router.refresh();
-    } catch (err: any) {
-      setError(err.message);
-      setLoading(false);
-    }
+    );
   };
 
   // autofocus/select when entering a step
+  // Update step from URL on mount
+  useEffect(() => {
+    if (stepParam && !isNaN(Number(stepParam))) {
+      setStep(parseInt(stepParam, 10));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stepParam]);
+
+  // Update URL when step changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      params.set("step", String(step));
+      const newUrl = `${pathname}?${params.toString()}`;
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, [step, pathname]);
+
   useEffect(() => {
     setError(null);
     if (step === 0) {
@@ -145,33 +199,16 @@ export function ManageCourseForm({ course }: { course: Course }) {
   }, [step]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <main className="relative flex-1 flex overflow-auto">
-        <div className="absolute top-3 right-0">
-          <Button type="button" variant="destructive" onClick={() => router.back()}>
-            <XIcon /> Cancel
-          </Button>
-        </div>
+    <div className="h-full flex flex-col bg-background">
+      <main className="flex-1 flex">
         {/* Sidebar Stepper */}
-        <aside className="hidden md:block w-64 bg-background border-r border-border py-10 px-6">
-          <div>
-            <Link
-              href="/dashboard"
-              className="flex items-center space-x-2 group"
-            >
-              <Logo
-                width={36}
-                height={36}
-                textPosition="right"
-                className="group"
-                textClassName="text-2xl"
-              />
+        <aside className="hidden md:block w-64 bg-background border-r border-border px-6 min-h-[80vh] sticky top-0">
+          <div className="mb-6 flex items-center gap-4">
+            <Link href={`/courses/${course.id}?ow=1`}>
+              <Button variant="ghost"><ChevronLeft /> Back</Button>
             </Link>
-            <div className="my-6">
-              <span className="text-xs font-semibold text-muted-foreground tracking-widest">
-                ORDER STEPS
-              </span>
-            </div>
+          </div>
+          <div>
             <nav aria-label="Order Steps">
               <ol className="space-y-1">
                 {stepTitles.map((title, i) => (
@@ -189,24 +226,8 @@ export function ManageCourseForm({ course }: { course: Course }) {
                         ${step > i ? "opacity-80" : ""}
                       `}
                       aria-current={step === i ? "step" : undefined}
-                      onClick={() => {
-                        if (i <= step) setStep(i);
-                      }}
+                      onClick={() => { setStep(i); }}
                     >
-                      <span
-                        className={`
-                          flex items-center justify-center w-7 h-7 rounded-full border mr-3 text-sm font-medium
-                          ${
-                            step === i
-                              ? "bg-primary text-primary-foreground border-primary"
-                              : step > i
-                                ? "bg-green-500 text-white border-green-500"
-                                : "bg-card text-muted-foreground border-border"
-                          }
-                        `}
-                      >
-                        {step > i ? <Check className="w-4 h-4" /> : i + 1}
-                      </span>
                       <span className="flex-1 truncate">{title}</span>
                       {step === i && (
                         <span className="ml-2 text-muted-foreground">
@@ -222,16 +243,14 @@ export function ManageCourseForm({ course }: { course: Course }) {
         </aside>
 
         {/* Main Content */}
-        <section className="flex-1 flex flex-col items-center">
-          <div className="w-full max-w-[700px] p-6">
+        <section className="flex-1 flex flex-col items-center overflow-auto">
+          <div className="w-full max-w-225 p-6">
             {/* Header */}
             <div className="mb-6">
               <h2 className="text-lg font-semibold">{stepTitles[step]}</h2>
               <p className="text-sm text-muted-foreground mt-1">
                 {step === 0 && "Edit title, description and thumbnail for your course."}
                 {step === 1 && "Edit the primary category and sub-category for your course."}
-                {step === 2 && "Edit pricing and active status for the course."}
-                {step === 3 && "Review all details before updating the course."}
               </p>
             </div>
 
@@ -248,323 +267,74 @@ export function ManageCourseForm({ course }: { course: Course }) {
 
             {/* Step Content */}
             <div className="pb-32">
-              {step === 1 && (
-                <div className="space-y-4">
-                  <Label className="block text-sm font-medium mb-1">
-                    Category *
-                  </Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Select
-                        value={primaryCategory}
-                        onValueChange={(val) => {
-                          setPrimaryCategory(val);
-                          setSubCategory("");
-                        }}
-                        disabled={loading}
-                        required
-                      >
-                        <SelectTrigger
-                          className="w-full"
-                          ref={primarySelectRef}
-                        >
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent className="w-full">
-                          {COURSE_CATEGORIES.map((cat) => (
-                            <SelectItem key={cat.value} value={cat.value}>
-                              {cat.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Select
-                        value={subCategory}
-                        onValueChange={setSubCategory}
-                        disabled={!primaryCategory || loading}
-                        required
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select sub-category" />
-                        </SelectTrigger>
-                        <SelectContent className="w-full">
-                          {selectedCategory?.children?.map((sub) => (
-                            <SelectItem key={sub.value} value={sub.value}>
-                              {sub.label}
-                            </SelectItem>
-                          )) ?? null}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {step === 0 && (
-                <form
-                  onSubmit={(e) => e.preventDefault()}
-                  className="space-y-4"
-                >
-                  <div>
-                    <Label
-                      htmlFor="title"
-                      className="block text-sm font-medium text-muted-foreground mb-2"
-                    >
-                      Course Title *
-                    </Label>
-                    <Input
-                      id="title"
-                      type="text"
-                      required
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="Enter course title"
-                      ref={titleRef}
-                    />
-                  </div>
-
-                  <div>
-                    <Label
-                      htmlFor="description"
-                      className="block text-sm font-medium text-muted-foreground mb-2"
-                    >
-                      Description *
-                    </Label>
-                    <Textarea
-                      id="description"
-                      rows={4}
-                      required
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Enter course description"
-                      ref={descriptionRef}
-                    />
-                  </div>
-
-                  <div>
-                    <ImageUploadWithCrop
-                      value={thumbnailUrl}
-                      onChange={(url) => setThumbnailUrl(url ?? "")}
-                      showPreview={true}
-                      disabled={loading}
-                      aspectRatio={"landscape"}
-                    />
-                    {/* Hidden input for required validation */}
-                    <input
-                      type="text"
-                      value={thumbnailUrl}
-                      required
-                      readOnly
-                      style={{ display: "none" }}
-                    />
-                  </div>
-                </form>
+                <BasicDetailsStep
+                  title={title}
+                  setTitle={setTitle}
+                  subtitle={subtitle}
+                  setSubtitle={setSubtitle}
+                  description={description}
+                  setDescription={setDescription}
+                  language={language}
+                  setLanguage={setLanguage}
+                  level={level}
+                  setLevel={setLevel}
+                  primaryCategory={primaryCategory}
+                  setPrimaryCategory={setPrimaryCategory}
+                  subCategory={subCategory}
+                  setSubCategory={setSubCategory}
+                  thumbnailUrl={thumbnailUrl}
+                  setThumbnailUrl={setThumbnailUrl}
+                  loading={loading}
+                  titleRef={titleRef}
+                  descriptionRef={descriptionRef}
+                  primarySelectRef={primarySelectRef}
+                />
               )}
-
+              {step === 1 && (
+                <PricingStep
+                  isFree={isFree}
+                  setIsFree={setIsFree}
+                  isActive={isActive}
+                  setIsActive={setIsActive}
+                  price={price}
+                  setPrice={setPrice}
+                  billingType={billingType}
+                  setBillingType={setBillingType}
+                  isRazorpayConnected={isRazorpayConnected}
+                  setIsRazorpayConnected={setIsRazorpayConnected}
+                  razorpayKey={razorpayKey}
+                  setRazorpayKey={setRazorpayKey}
+                  loading={loading}
+                  priceRef={priceRef}
+                />
+              )}
               {step === 2 && (
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center">
-                      <Checkbox
-                        id="is_free"
-                        checked={isFree}
-                        onCheckedChange={(v) => {
-                          const val = Boolean(v);
-                          setIsFree(val);
-                          if (val) {
-                            setIsRazorpayConnected(false);
-                            setRazorpayKey("");
-                          }
-                        }}
-                        className="h-4 w-4 focus:ring-accent border-muted rounded"
-                        disabled={loading}
-                        required
-                      />
-                      <Label
-                        htmlFor="is_free"
-                        className="ml-2 block text-sm text-muted-foreground"
-                      >
-                        Free Course
-                      </Label>
-                    </div>
-                    <div className="flex items-center">
-                      <Checkbox
-                        id="is_active"
-                        checked={isActive}
-                        onCheckedChange={(v) => setIsActive(Boolean(v))}
-                        className="h-4 w-4 focus:ring-accent border-muted rounded"
-                        disabled={loading}
-                        required
-                      />
-                      <Label
-                        htmlFor="is_active"
-                        className="ml-2 block text-sm text-muted-foreground"
-                      >
-                        Course is active
-                      </Label>
-                    </div>
-                  </div>
-
-                  {/* Price input, only enabled if not free */}
-                  <div>
-                    <Label
-                      htmlFor="price"
-                      className="block text-sm font-medium text-muted-foreground mb-2"
-                    >
-                      {billingType === "monthly" ? "Price per month (in ₹)" : "Price (in ₹)"}
-                    </Label>
-
-                    {/* Billing type radio buttons */}
-                    <div className="flex items-center space-x-4 mb-2">
-                      <label className="inline-flex items-center space-x-2">
-                        <input
-                          type="radio"
-                          name="billingType"
-                          value="one_time"
-                          checked={billingType === "one_time"}
-                          onChange={() => setBillingType("one_time")}
-                          disabled={loading}
-                        />
-                        <span className="text-sm">One-time</span>
-                      </label>
-                      <label className="inline-flex items-center space-x-2">
-                        <input
-                          type="radio"
-                          name="billingType"
-                          value="monthly"
-                          checked={billingType === "monthly"}
-                          onChange={() => setBillingType("monthly")}
-                          disabled={loading}
-                        />
-                        <span className="text-sm">Monthly</span>
-                      </label>
-                    </div>
-
-                    <Input
-                      id="price"
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={isFree ? "" : price}
-                      onChange={(e) => setPrice(e.target.value)}
-                      placeholder={billingType === "monthly" ? "Enter monthly price" : "Enter course price"}
-                      disabled={isFree || loading}
-                      required={!isFree}
-                      ref={priceRef}
-                    />
-                  </div>
-
-                  {/* Razorpay enable toggle and key input - only for paid courses */}
-                  {!isFree && (
-                    <div className="space-y-2">
-                      <div className="flex items-center">
-                        <Checkbox
-                          id="razorpay"
-                          checked={isRazorpayConnected}
-                          onCheckedChange={(v) => setIsRazorpayConnected(Boolean(v))}
-                          className="h-4 w-4 text-accent focus:ring-accent border-muted rounded"
-                          disabled={loading}
-                        />
-                        <Label
-                          htmlFor="razorpay"
-                          className="ml-2 block text-sm text-muted-foreground"
-                        >
-                          Enable Razorpay payments
-                        </Label>
-                      </div>
-
-                      {isRazorpayConnected && (
-                        <div>
-                          <Label htmlFor="razorpay_key" className="block text-sm font-medium mb-1">
-                            Razorpay Key ID
-                          </Label>
-                          <Input
-                            id="razorpay_key"
-                            type="text"
-                            value={razorpayKey}
-                            onChange={(e) => setRazorpayKey(e.target.value)}
-                            placeholder="rzp_test_XXXXXXXXXXXX"
-                            disabled={loading}
-                            required={isRazorpayConnected}
-                          />
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Add your Razorpay Key ID to enable payments. You can also connect via your dashboard later.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                <CurriculumStep courseId={course.id} />
               )}
-
               {step === 3 && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Review</h3>
-                  <div className="grid grid-cols-1 gap-2">
-                    <div>
-                      <strong>Title:</strong> {title}
-                    </div>
-                    <div>
-                      <strong>Description:</strong> {description}
-                    </div>
-                    <div>
-                      <strong>Category:</strong> {primaryCategory} / {subCategory}
-                    </div>
-                    <div>
-                      <strong>Price:</strong> {isFree ? "Free" : `₹${price}`}
-                    </div>
-                    <div>
-                      <strong>Active:</strong> {isActive ? "Yes" : "No"}
-                    </div>
-                    {thumbnailUrl && (
-                      <div>
-                        <strong>Thumbnail:</strong>
-                        <div className="mt-2">
-                          <img
-                            src={thumbnailUrl}
-                            alt="thumb"
-                            className="w-48 h-auto rounded"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <DetailsCourseStep
+                  requirements={requirements}
+                  setRequirements={setRequirements}
+                  expectations={expectations}
+                  setExpectations={setExpectations}
+                />
+              )}
+              {step === 4 && (
+                <>
+                  {/* @ts-ignore: instructor_id may be undefined for some old courses, fallback to empty string */}
+                  <AnnouncementStep courseId={course.id} instructorId={(course as any).instructor_id || ""} />
+                </>
               )}
             </div>
           </div>
         </section>
       </main>
       {/* Fixed footer - always at bottom, centered content */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur border-t border-border py-4">
-        <div className="mx-auto max-w-[1800px] px-6">
-          <div className="flex justify-between w-full">
+      <footer className="fixed bottom-0 left-0 z-50 right-0 bg-card/80 backdrop-blur border-t border-border py-4">
+        <div className="mx-auto max-w-450 px-6">
+          <div className="flex justify-end w-full">
             <div>
-              {step > 0 && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setError(null);
-                    setStep((s) => Math.max(0, s - 1));
-                  }}
-                >
-                  Back
-                </Button>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              {step < 3 ? (
-                <Button
-                  onClick={() => {
-                    if (validateStep()) setStep((s) => s + 1);
-                  }}
-                >
-                  Next <ChevronRight />
-                </Button>
-              ) : (
                 <Button
                   onClick={() => {
                     if (validateStep()) handleUpdate();
@@ -580,7 +350,6 @@ export function ManageCourseForm({ course }: { course: Course }) {
                     "Update Course"
                   )}
                 </Button>
-              )}
             </div>
           </div>
         </div>
