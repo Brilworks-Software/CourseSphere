@@ -41,7 +41,7 @@ export default function AdminDashboard() {
           ...rest,
           organization: organization || null,
           // add isOwned flag so each course object matches list route shape
-          isOwned: course.instructor_id === user.id,
+          isOwned: true,
         };
       });
 

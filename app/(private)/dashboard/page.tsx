@@ -9,14 +9,14 @@ export default function DashboardPage() {
   const { user } = useUserContext();
 
   // You can add a loading state if needed
-  if (!user) return <div className="h-dvh w-full flex justify-center items-center"><Loader /></div>;
+  if (!user) return <div className="h-dvh w-full flex justify-center items-center "><Loader /></div>;
 
   // Redirect/render based on role
   if (user.role === "super_admin") {
-    return <SuperAdminDashboard />;
+    return <div className="max-w-[1800px] mx-auto"><SuperAdminDashboard /></div>;
   } else if (user.role === "admin") {
-    return <AdminDashboard />;
+    return <div className="max-w-[1800px] mx-auto"><AdminDashboard /></div>;
   } else {
-    return <StudentDashboard />;
+    return <div className="max-w-[1800px] mx-auto"><StudentDashboard /></div>;
   }
 }

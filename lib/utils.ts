@@ -64,3 +64,11 @@ export const parseHashParamsForSessionVerification = (
     code: params.get("code"),
   };
 };
+
+
+export const EDITOR_TOOLBAR =
+  "blocks | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent";
+
+export const EDITOR_PLUGIN = ["wordcount", "lists", "link", "table"];
+
+export const EDITOR_MENUBAR = "edit insert format table";

@@ -64,3 +64,63 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+  try {
+    const supabase = await createClient();
+    const body = await request.json();
+    const id = params.id || body.id;
+
+    console.log("PATCH /api/courses/:id called");
+    console.log("params.id:", params.id);
+    console.log("body.id:", body.id);
+    console.log("PATCH body:", body);
+
+    if (!id) {
+      console.log("No course id provided");
+      return NextResponse.json({ error: "Missing course id" }, { status: 400 });
+    }
+
+    // Map all fields to DB columns, using null for missing/empty values
+    const updateFields: any = {
+      title: body.title,
+      subtitle: body.subtitle ?? null,
+      description: body.description ?? null,
+      language: body.language ?? null,
+      level: body.level ?? null,
+      is_active: body.is_active,
+      thumbnail_url: body.thumbnail_url ?? null,
+      primary_category: body.primary_category ?? null,
+      sub_category: body.sub_category ?? null,
+      status: body.status ?? null,
+      last_submitted_at: body.last_submitted_at ?? null,
+      published_at: body.published_at ?? null,
+      is_free: body.is_free,
+      price: body.price,
+      razorpay_connected: body.razorpay_connected ?? false,
+      razorpay_key: body.razorpay_key ?? null,
+      organization_id: body.organization_id ?? null,
+      instructor_id: body.instructor_id ?? null,
+    };
+
+    console.log("PATCH updateFields:", updateFields);
+
+    const { data, error } = await supabase
+      .from("courses")
+      .update(updateFields)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.log("PATCH error:", error);
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    console.log("PATCH success, data:", data);
+    return NextResponse.json(data);
+  } catch (error: any) {
+    console.log("PATCH exception:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

@@ -15,11 +15,11 @@ export default function DashboardLayout({
       {/* Hide Navbar on /courses/new */}
       {pathname !== "/courses/new" && <Navbar />}
       <main
-        className={
-          pathname === "/courses/new"
-            ? "p-0"
-            : "px-4 sm:px-6 lg:px-8 py-8"
-        }
+        // className={
+        //   pathname === "/courses/new"
+        //     ? "p-0"
+        //     : "px-4 sm:px-6 lg:px-8 py-8"
+        // }
       >
         {children}
       </main>
