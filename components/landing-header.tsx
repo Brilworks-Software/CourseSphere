@@ -26,6 +26,12 @@ export function LandingHeader() {
           >
             Explore Courses
           </Link>
+          <Link
+            href="/tools"
+            className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+          >
+            Free Tools
+          </Link>
         </nav>
 
         <div className="flex items-center gap-3">
