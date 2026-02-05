@@ -167,7 +167,6 @@ export default function StudentSingleCourse({
       organization={course?.organization}
       currentLesson={currentLesson}
       allLessons={allLessons}
-      id={id}
       signedVideoUrl={signedVideoUrl}
       sections={sections}
       setLessonId={handleLessonChange}
