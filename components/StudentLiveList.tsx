@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useUserContext } from "@/app/provider/user-context";
 import React from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 type Props = {};
 
@@ -20,7 +21,7 @@ const StudentLiveList = (props: Props) => {
       try {
         // call API to get streams for courses where this student is enrolled
         const res = await fetch(
-          `/api/admin/courses/live-stream?student_id=${user.id}&only_live=true`,
+          `/api/live-stream?student_id=${user.id}&only_live=true`,
         );
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
@@ -65,32 +66,39 @@ const StudentLiveList = (props: Props) => {
     );
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5">
       {streams.map((s: any) => (
         <Link
           key={s.id}
           href={`/courses/live-stream/${s.id}`}
           className="block"
         >
-          <div className="p-3 border rounded hover:shadow-sm transition">
-            <div className="flex items-center justify-between">
+          {/* Use shadcn Card layout for each stream */}
+          <Card className="hover:shadow-sm  transition">
+            <CardHeader className="flex items-start justify-between gap-4 py-3 px-4">
               <div>
-                <div className="font-semibold">{s.title}</div>
+                <CardTitle className="font-semibold">{s.title}</CardTitle>
                 <div className="text-sm text-muted-foreground">
                   {s.description ?? ""}
                 </div>
               </div>
-              <div className="text-right text-xs text-muted-foreground">
-                {s.scheduled_start_at
-                  ? new Date(s.scheduled_start_at).toLocaleString()
-                  : ""}
-                <div>{s.status}</div>
+
+              <div className="text-right text-xs text-muted-foreground flex flex-col items-end">
+                <div className="mb-2">
+                  {s.scheduled_start_at
+                    ? new Date(s.scheduled_start_at).toLocaleString()
+                    : ""}
+                </div>
               </div>
-            </div>
-            <div className="mt-2 text-sm text-muted-foreground">
-              Instructor: {s.instructor?.first_name} {s.instructor?.last_name}
-            </div>
-          </div>
+            </CardHeader>
+
+            <CardContent className="pt-0 px-4 pb-4">
+              <div className="text-sm text-muted-foreground">
+                Instructor: {s.instructor?.first_name ?? ""}{" "}
+                {s.instructor?.last_name ?? ""}
+              </div>
+            </CardContent>
+          </Card>
         </Link>
       ))}
     </div>
