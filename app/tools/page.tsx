@@ -11,11 +11,18 @@ import {
   TrendingUp, 
   ArrowRight,
   Lightbulb,
-  MessageSquare
+  MessageSquare,
+  Award,
+  GraduationCap
 } from "lucide-react";
 import { LandingHeader } from "@/components/landing-header";
 import { LandingFooter } from "@/components/landing-footer";
 import Link from "next/link";
+import { useState } from "react";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import { Slider } from "@/components/ui/slider";
 
 export default function ToolsPage() {
   const tools = [
@@ -36,6 +43,24 @@ export default function ToolsPage() {
       href: "/tools/comment-insights",
       badge: "🔥 AI-Powered",
       features: ["Comment clustering", "Module mapping", "Demand signals", "Beginner/Advanced split"]
+    },
+    {
+      title: "Niche Authority Score",
+      description: "Kill imposter syndrome with data. Discover if you're expert enough to sell a course by analyzing your teaching authority signals.",
+      icon: Award,
+      iconColor: "text-yellow-500",
+      href: "/tools/niche-authority",
+      badge: "🔥 AI-Powered",
+      features: ["Topic consistency analysis", "Content depth scoring", "Authority level assessment", "Pricing recommendations"]
+    },
+    {
+      title: "Beginner vs Advanced Audience Analyzer",
+      description: "Discover who your course should be for. Analyze comments to understand if your audience is beginner, intermediate, or advanced level.",
+      icon: GraduationCap,
+      iconColor: "text-indigo-500",
+      href: "/tools/audience-analyzer",
+      badge: "🔥 AI-Powered",
+      features: ["Comment skill analysis", "Question pattern detection", "Course level recommendation", "Pricing strategy"]
     },
     {
       title: "YouTube Monetization Readiness",

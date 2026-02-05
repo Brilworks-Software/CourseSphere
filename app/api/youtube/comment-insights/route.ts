@@ -91,7 +91,7 @@ async function fetchAllComments(videoId: string, apiKey: string): Promise<any[]>
 
   try {
     do {
-      const url = `https://www.googleapis.com/youtube/v3/commentThreads?key=${apiKey}&videoId=${videoId}&part=snippet&maxResults=${maxResults}&order=relevance${pageToken ? `&pageToken=${pageToken}` : ''}`;
+      const url: string = `https://www.googleapis.com/youtube/v3/commentThreads?key=${apiKey}&videoId=${videoId}&part=snippet&maxResults=${maxResults}&order=relevance${pageToken ? `&pageToken=${pageToken}` : ''}`;
       
       const response = await fetch(url);
       if (!response.ok) {
