@@ -9,7 +9,9 @@ import {
   Users, 
   DollarSign, 
   TrendingUp, 
-  ArrowRight
+  ArrowRight,
+  Lightbulb,
+  MessageSquare
 } from "lucide-react";
 import { LandingHeader } from "@/components/landing-header";
 import { LandingFooter } from "@/components/landing-footer";
@@ -17,6 +19,24 @@ import Link from "next/link";
 
 export default function ToolsPage() {
   const tools = [
+    {
+      title: "YouTube Course Idea Generator",
+      description: "Discover profitable course ideas from your YouTube content. AI analyzes your videos, comments, and audience needs to generate 5 specific course concepts.",
+      icon: Lightbulb,
+      iconColor: "text-purple-500",
+      href: "/tools/youtube-course-idea",
+      badge: "🔥 AI-Powered",
+      features: ["Topic clustering", "Problem extraction", "Demand analysis", "Pricing suggestions"]
+    },
+    {
+      title: "Comment-to-Course Insights",
+      description: "Analyze video comments to discover what your audience really wants. AI organizes comments into course modules with real demand proof.",
+      icon: MessageSquare,
+      iconColor: "text-blue-500",
+      href: "/tools/comment-insights",
+      badge: "🔥 AI-Powered",
+      features: ["Comment clustering", "Module mapping", "Demand signals", "Beginner/Advanced split"]
+    },
     {
       title: "YouTube Monetization Readiness",
       description: "Check how close you are to meeting YouTube's monetization requirements. Get instant feedback on your progress.",
