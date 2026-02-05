@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, DragEvent } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { UploadCloud, CheckCircle2, XCircle, RefreshCcw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
@@ -316,7 +315,7 @@ export default function LessonVideoUploadPage() {
             {lesson?.video_url && (
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 className="w-full mt-2"
                 disabled={uploading}
                 onClick={() => {

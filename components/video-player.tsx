@@ -13,13 +13,14 @@ const cld = new Cloudinary({
   },
 })
 
-interface VideoPlayerProps {
-  lesson: Lesson
-  lessons: Lesson[]
+type VideoPlayerProps = {
+  lesson: any
+  lessons: any[]
   courseId: string
+  videoUrl?: string // <-- add this prop
 }
 
-export function VideoPlayer({ lesson, lessons, courseId }: VideoPlayerProps) {
+export function VideoPlayer({ lesson, lessons, courseId, videoUrl }: VideoPlayerProps) {
   const [currentLesson, setCurrentLesson] = useState(lesson)
 
   useEffect(() => {
@@ -43,12 +44,14 @@ export function VideoPlayer({ lesson, lessons, courseId }: VideoPlayerProps) {
     return url
   }
 
-  const publicId = getPublicId(currentLesson.video_url)
+  // Use videoUrl if provided, else fallback to lesson.video_url
+  const src = videoUrl || lesson?.video_url
+  const publicId = getPublicId(src)
 
   if (!publicId || !cloudName) {
     return (
       <div className="aspect-video bg-gray-900 flex items-center justify-center rounded-lg">
-        <p className="text-white">Video not available</p>
+        <p>Video not available</p>
       </div>
     )
   }
