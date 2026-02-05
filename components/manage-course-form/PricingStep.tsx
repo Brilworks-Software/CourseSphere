@@ -2,8 +2,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { RefObject } from "react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { useState } from "react";
 
 interface PricingStepProps {
+  courseId: string;
   isFree: boolean;
   setIsFree: (v: boolean) => void;
   isActive: boolean;
@@ -21,9 +25,54 @@ interface PricingStepProps {
 }
 
 export function PricingStep({
-  isFree, setIsFree, isActive, setIsActive, price, setPrice, billingType, setBillingType,
+  courseId, isFree, setIsFree, isActive, setIsActive, price, setPrice, billingType, setBillingType,
   isRazorpayConnected, setIsRazorpayConnected, razorpayKey, setRazorpayKey, loading, priceRef
 }: PricingStepProps) {
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await toast.promise(
+        (async () => {
+          // basic validations
+          if (!isFree && (!price || isNaN(Number(price)) || Number(price) <= 0)) {
+            throw new Error("Please enter a valid price for paid courses.");
+          }
+          if (!isFree && isRazorpayConnected && !razorpayKey) {
+            throw new Error("Please provide the Razorpay Key ID to enable Razorpay payments.");
+          }
+
+          const res = await fetch(`/api/courses/${courseId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              is_free: isFree,
+              price: isFree ? 0 : Number(price),
+              billing_type: billingType,
+              is_active: isActive,
+              razorpay_connected: isRazorpayConnected && !isFree ? isRazorpayConnected : false,
+              razorpay_key: !isFree && isRazorpayConnected ? razorpayKey : null,
+            }),
+          });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data?.error || "Failed to save pricing");
+          }
+        })(),
+        {
+          loading: "Saving pricing...",
+          success: "Pricing saved",
+          error: "Failed to save pricing",
+        }
+      );
+    } catch (e) {
+      // handled by toast
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center space-x-4">
@@ -137,6 +186,11 @@ export function PricingStep({
           )}
         </div>
       )}
+      <div className="flex justify-end">
+        <Button onClick={handleSave} disabled={loading || saving}>
+          {saving ? "Saving..." : "Save Pricing & Settings"}
+        </Button>
+      </div>
     </div>
   );
 }

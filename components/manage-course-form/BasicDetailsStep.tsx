@@ -6,8 +6,9 @@ import { COURSE_CATEGORIES } from "@/app/util/course_category";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import type { RefObject } from "react";
 import dynamic from "next/dynamic";
-import { useMemo } from "react";
-import { toast } from "sonner"; // or wherever your toast comes from
+import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const MarkdownEditor = dynamic(() => import("@/components/MarkdownEditor"), { ssr: false });
 
@@ -26,6 +27,7 @@ function countWords(text: string) {
 }
 
 interface BasicDetailsStepProps {
+  courseId: string;
   title: string;
   setTitle: (v: string) => void;
   subtitle: string;
@@ -46,19 +48,55 @@ interface BasicDetailsStepProps {
   titleRef: RefObject<HTMLInputElement | null>;
   descriptionRef: RefObject<HTMLTextAreaElement | null>;
   primarySelectRef: RefObject<HTMLButtonElement | null>;
-  // requirements and expectations removed
 }
 
 export function BasicDetailsStep({
-  title, setTitle, subtitle, setSubtitle, description, setDescription,
+  courseId, title, setTitle, subtitle, setSubtitle, description, setDescription,
   language, setLanguage, level, setLevel, primaryCategory, setPrimaryCategory,
   subCategory, setSubCategory, thumbnailUrl, setThumbnailUrl, loading,
   titleRef, descriptionRef, primarySelectRef,
-  // requirements, setRequirements, expectations, setExpectations removed
 }: BasicDetailsStepProps) {
   const selectedCategory = COURSE_CATEGORIES.find((c: any) => c.value === primaryCategory);
   const plainText = useMemo(() => stripHtml(description), [description]);
   const wordCount = useMemo(() => countWords(plainText), [plainText]);
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await toast.promise(
+        (async () => {
+          const res = await fetch(`/api/courses/${courseId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title,
+              subtitle,
+              description,
+              language,
+              level,
+              thumbnail_url: thumbnailUrl === "" ? null : thumbnailUrl,
+              primary_category: primaryCategory === "" ? null : primaryCategory,
+              sub_category: subCategory === "" ? null : subCategory,
+            }),
+          });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data?.error || "Failed to save basic details");
+          }
+        })(),
+        {
+          loading: "Saving basic details...",
+          success: "Basic details saved",
+          error: "Failed to save basic details",
+        }
+      );
+    } catch (e) {
+      // handled by toast
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <form
@@ -196,12 +234,17 @@ export function BasicDetailsStep({
           value={thumbnailUrl}
           onChange={url => setThumbnailUrl(url ?? "")}
           showPreview={true}
-          disabled={loading}
+          disabled={loading || saving}
           aspectRatio={"landscape"}
         />
         <input type="text" value={thumbnailUrl} required readOnly style={{ display: "none" }} />
       </div>
-      {/* requirements and expectations fields removed */}
+
+      <div className="flex justify-end">
+        <Button onClick={handleSave} disabled={loading || saving}>
+          {saving ? "Saving..." : "Save Basic Details"}
+        </Button>
+      </div>
     </form>
   );
 }

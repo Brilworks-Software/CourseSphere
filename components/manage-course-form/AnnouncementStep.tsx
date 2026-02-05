@@ -20,6 +20,8 @@ interface Announcement {
   is_published: boolean;
   is_pinned: boolean;
   created_at: string;
+  discussion_thread?: any;
+  replies?: any[];
 }
 
 export default function AnnouncementStep({ courseId, instructorId }: AnnouncementStepProps) {
@@ -97,11 +99,11 @@ export default function AnnouncementStep({ courseId, instructorId }: Announcemen
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold">Announcements</h2>
+        <h2 className="text-sm font-semibold">Your Announcement</h2>
         <Button onClick={() => handleOpen()}>New Announcement</Button>
       </div>
       <div className="space-y-2">
-        {announcements.length === 0 && <div className="text-muted-foreground">No announcements yet.</div>}
+        {announcements.length === 0 && <div className="text-center pt-9 text-muted-foreground">No announcements yet.</div>}
         {announcements.map(a => {
           const formattedTime = formatDistanceToNow(new Date(a.created_at), { addSuffix: true });
           return (
@@ -119,6 +121,38 @@ export default function AnnouncementStep({ courseId, instructorId }: Announcemen
               </CardHeader>
               <CardContent>
                 <HtmlPreview html={a.message} className="prose max-w-none" />
+                {(a.discussion_thread || (a.replies && a.replies.length > 0)) && (
+                  <div className="mt-4">
+                    <div className="flex justify-end">
+                      <Button variant="ghost" size="sm" disabled>
+                        View Comments
+                      </Button>
+                    </div>
+                    {/* Render replies list below the button */}
+                    {a.replies && a.replies.length > 0 && (
+                      <div className="mt-2 space-y-3 border-t pt-2">
+                        {a.replies.map(reply => (
+                          <div key={reply.id} className="flex gap-2 items-start">
+                            <img
+                              src={reply.user?.profile_picture_url}
+                              alt={reply.user?.first_name}
+                              className="w-6 h-6 rounded-full mt-1"
+                            />
+                            <div>
+                              <div className="text-sm font-medium">
+                                {reply.user?.first_name} {reply.user?.last_name}
+                                <span className="ml-2 text-xs text-muted-foreground">
+                                  {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
+                                </span>
+                              </div>
+                              <div className="text-sm">{reply.body}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           );

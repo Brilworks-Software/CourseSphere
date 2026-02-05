@@ -16,6 +16,79 @@ CREATE TABLE public.course_announcements (
   CONSTRAINT course_announcements_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id),
   CONSTRAINT course_announcements_instructor_id_fkey FOREIGN KEY (instructor_id) REFERENCES public.users(id)
 );
+CREATE TABLE public.course_discussion_replies (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  thread_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  parent_reply_id uuid,
+  body text NOT NULL,
+  is_instructor_reply boolean DEFAULT false,
+  upvote_count integer DEFAULT 0,
+  downvote_count integer DEFAULT 0,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT course_discussion_replies_pkey PRIMARY KEY (id),
+  CONSTRAINT course_discussion_replies_thread_id_fkey FOREIGN KEY (thread_id) REFERENCES public.course_discussion_threads(id),
+  CONSTRAINT course_discussion_replies_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT course_discussion_replies_parent_reply_id_fkey FOREIGN KEY (parent_reply_id) REFERENCES public.course_discussion_replies(id)
+);
+CREATE TABLE public.course_discussion_threads (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  course_id uuid NOT NULL,
+  lesson_id uuid,
+  user_id uuid NOT NULL,
+  title text NOT NULL,
+  body text NOT NULL,
+  thread_type text NOT NULL DEFAULT 'question'::text CHECK (thread_type = ANY (ARRAY['announcement'::text, 'question'::text, 'discussion'::text])),
+  is_pinned boolean DEFAULT false,
+  is_locked boolean DEFAULT false,
+  allow_comments boolean DEFAULT true,
+  is_resolved boolean DEFAULT false,
+  view_count integer DEFAULT 0,
+  accepted_reply_id uuid,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  announcement_id uuid UNIQUE,
+  CONSTRAINT course_discussion_threads_pkey PRIMARY KEY (id),
+  CONSTRAINT course_discussion_threads_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id),
+  CONSTRAINT course_discussion_threads_lesson_id_fkey FOREIGN KEY (lesson_id) REFERENCES public.lessons(id),
+  CONSTRAINT course_discussion_threads_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT course_discussion_threads_announcement_id_fkey FOREIGN KEY (announcement_id) REFERENCES public.course_announcements(id)
+);
+CREATE TABLE public.course_discussion_votes (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  reply_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  vote smallint NOT NULL CHECK (vote = ANY (ARRAY[1, '-1'::integer])),
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT course_discussion_votes_pkey PRIMARY KEY (id),
+  CONSTRAINT course_discussion_votes_reply_id_fkey FOREIGN KEY (reply_id) REFERENCES public.course_discussion_replies(id),
+  CONSTRAINT course_discussion_votes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.course_live_streams (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  course_id uuid NOT NULL,
+  instructor_id uuid NOT NULL,
+  title text NOT NULL,
+  description text,
+  youtube_video_id text NOT NULL,
+  youtube_video_url text NOT NULL,
+  scheduled_start_at timestamp with time zone,
+  scheduled_end_at timestamp with time zone,
+  status text NOT NULL DEFAULT 'scheduled'::text CHECK (status = ANY (ARRAY['scheduled'::text, 'live'::text, 'ended'::text, 'cancelled'::text])),
+  announcement_id uuid,
+  discussion_thread_id uuid,
+  is_recording_available boolean DEFAULT false,
+  recording_lesson_id uuid,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT course_live_streams_pkey PRIMARY KEY (id),
+  CONSTRAINT course_live_streams_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id),
+  CONSTRAINT course_live_streams_instructor_id_fkey FOREIGN KEY (instructor_id) REFERENCES public.users(id),
+  CONSTRAINT course_live_streams_announcement_id_fkey FOREIGN KEY (announcement_id) REFERENCES public.course_announcements(id),
+  CONSTRAINT course_live_streams_discussion_thread_id_fkey FOREIGN KEY (discussion_thread_id) REFERENCES public.course_discussion_threads(id),
+  CONSTRAINT course_live_streams_recording_lesson_id_fkey FOREIGN KEY (recording_lesson_id) REFERENCES public.lessons(id)
+);
 CREATE TABLE public.course_rating_stats (
   course_id uuid NOT NULL,
   avg_rating numeric DEFAULT 0,
@@ -86,6 +159,7 @@ CREATE TABLE public.lessons (
   section_id uuid,
   order_index integer DEFAULT 1,
   description text,
+  uploadUrl text,
   CONSTRAINT lessons_pkey PRIMARY KEY (id),
   CONSTRAINT lessons_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id),
   CONSTRAINT lessons_section_id_fkey FOREIGN KEY (section_id) REFERENCES public.course_sections(id)
@@ -122,7 +196,6 @@ CREATE TABLE public.profiles (
 );
 CREATE TABLE public.users (
   id uuid NOT NULL,
-  name text,
   role text NOT NULL DEFAULT 'student'::text CHECK (role = ANY (ARRAY['super_admin'::text, 'admin'::text, 'student'::text])),
   bio text,
   theme text DEFAULT 'system'::text CHECK (theme = ANY (ARRAY['light'::text, 'dark'::text, 'system'::text])),

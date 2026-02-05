@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { useUserContext } from "@/app/provider/user-context";
 import OverviewTab from "./OverviewTab";
 import AnnouncementsTab from "./AnnouncementsTab";
 import ReviewsTab from "./ReviewsTab";
@@ -52,6 +53,7 @@ function formatHMS(totalSeconds: number) {
 }
 
 export default function Tabs({ course, instructor, organization }: any) {
+  const { user } = useUserContext();
   const tabs = ["Overview", "Announcements", "Reviews", "Learning tools"];
   const [active, setActive] = useState(tabs[0]);
 
@@ -93,7 +95,14 @@ export default function Tabs({ course, instructor, organization }: any) {
             studentsCount={studentsCount}
           />
         )}
-        {active === "Announcements" && <AnnouncementsTab />}
+        {active === "Announcements" && (
+          <>
+            <AnnouncementsTab
+              courseId={course?.id}
+              user={user}
+            />
+          </>
+        )}
         {active === "Reviews" && <ReviewsTab />}
         {active === "Learning tools" && <LearningToolsTab />}
       </div>
