@@ -9,8 +9,8 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { BasicDetailsStep } from "./manage-course-form/BasicDetailsStep";
 import { PricingStep } from "./manage-course-form/PricingStep";
 import { CurriculumStep } from "./manage-course-form/CurriculumStep";
-import { toast } from "sonner";
 import AnnouncementStep from "./manage-course-form/AnnouncementStep";
+import LiveStreamStep from "./manage-course-form/LiveStreamStep";
 
 export function ManageCourseForm({ course }: { course: Course }) {
   // Basic details
@@ -31,11 +31,6 @@ export function ManageCourseForm({ course }: { course: Course }) {
 
   // Image fields
   const [thumbnailUrl, setThumbnailUrl] = useState<string>((course as any).thumbnail_url ?? "");
-
-  // Status fields
-  const [status, setStatus] = useState((course as any).status ?? "draft");
-  const [lastSubmittedAt, setLastSubmittedAt] = useState((course as any).last_submitted_at ?? "");
-  const [publishedAt, setPublishedAt] = useState((course as any).published_at ?? "");
 
   // is_free and price
   const [isFree, setIsFree] = useState((course as any).is_free ?? true);
@@ -66,101 +61,12 @@ export function ManageCourseForm({ course }: { course: Course }) {
     "Basic details",
     "Pricing & settings",
     "Curriculum",
+    "Live stream",
     "Details",
     "Announcements",
   ];
 
   // Removed unused selectedCategory and COURSE_CATEGORIES from parent
-
-  // validate the current step before moving forward
-  const validateStep = () => {
-    setError(null);
-    if (step === 1) {
-    }
-    if (step === 2) {
-      if (typeof isFree !== "boolean") {
-        setError("Course free/paid status is required.");
-        return false;
-      }
-      if (!isFree && (!price || isNaN(Number(price)) || Number(price) <= 0)) {
-        setError("Please enter a valid price for paid courses.");
-        return false;
-      }
-    }
-    return true;
-  };
-
-  const handleUpdate = async () => {
-    setLoading(true);
-    setError(null);
-
-    // Validate price if not free
-    if (!isFree && (!price || isNaN(Number(price)) || Number(price) <= 0)) {
-      setError("Please enter a valid price for paid courses.");
-      setLoading(false);
-      return;
-    }
-
-    // Validate razorpay key when enabled and course is paid
-    if (!isFree && isRazorpayConnected && !razorpayKey) {
-      setError("Please provide the Razorpay Key ID to enable Razorpay payments.");
-      setLoading(false);
-      return;
-    }
-
-    await toast.promise(
-      (async () => {
-        try {
-          const response = await fetch(`/api/courses/${course.id}`, {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              id: course.id,
-              title,
-              subtitle,
-              description,
-              language,
-              level,
-              is_active: isActive,
-              thumbnail_url: thumbnailUrl === "" ? null : thumbnailUrl,
-              primary_category: primaryCategory === "" ? null : primaryCategory,
-              sub_category: subCategory === "" ? null : subCategory,
-              status,
-              last_submitted_at: lastSubmittedAt || null,
-              published_at: publishedAt || null,
-              is_free: isFree,
-              price: isFree ? 0 : Number(price),
-              razorpay_connected: isRazorpayConnected && !isFree ? isRazorpayConnected : false,
-              razorpay_key: !isFree && isRazorpayConnected ? razorpayKey : null,
-              organization_id: (course as any).organization_id || null,
-              instructor_id: (course as any).instructor_id || null,
-              requirements,
-              expectations,
-            }),
-          });
-
-          if (!response.ok) {
-            const data = await response.json();
-            throw new Error(data.error || "Failed to update course");
-          }
-
-          setLoading(false);
-          router.refresh();
-        } catch (err: any) {
-          setError(err.message);
-          setLoading(false);
-          throw err;
-        }
-      })(),
-      {
-        loading: "Updating course...",
-        success: "Course updated successfully!",
-        error: "Failed to update course.",
-      }
-    );
-  };
 
   // autofocus/select when entering a step
   // Update step from URL on mount
@@ -266,9 +172,10 @@ export function ManageCourseForm({ course }: { course: Course }) {
             )}
 
             {/* Step Content */}
-            <div className="pb-32">
+            <div className="pb-6">
               {step === 0 && (
                 <BasicDetailsStep
+                  courseId={course.id}
                   title={title}
                   setTitle={setTitle}
                   subtitle={subtitle}
@@ -293,6 +200,7 @@ export function ManageCourseForm({ course }: { course: Course }) {
               )}
               {step === 1 && (
                 <PricingStep
+                  courseId={course.id}
                   isFree={isFree}
                   setIsFree={setIsFree}
                   isActive={isActive}
@@ -313,16 +221,19 @@ export function ManageCourseForm({ course }: { course: Course }) {
                 <CurriculumStep courseId={course.id} />
               )}
               {step === 3 && (
+                <LiveStreamStep courseId={course.id} instructorId={(course as any).instructor_id || ""} />
+              )}
+              {step === 4 && (
                 <DetailsCourseStep
+                  courseId={course.id}
                   requirements={requirements}
                   setRequirements={setRequirements}
                   expectations={expectations}
                   setExpectations={setExpectations}
                 />
               )}
-              {step === 4 && (
+              {step === 5 && (
                 <>
-                  {/* @ts-ignore: instructor_id may be undefined for some old courses, fallback to empty string */}
                   <AnnouncementStep courseId={course.id} instructorId={(course as any).instructor_id || ""} />
                 </>
               )}
@@ -330,30 +241,8 @@ export function ManageCourseForm({ course }: { course: Course }) {
           </div>
         </section>
       </main>
-      {/* Fixed footer - always at bottom, centered content */}
-      <footer className="fixed bottom-0 left-0 z-50 right-0 bg-card/80 backdrop-blur border-t border-border py-4">
-        <div className="mx-auto max-w-450 px-6">
-          <div className="flex justify-end w-full">
-            <div>
-                <Button
-                  onClick={() => {
-                    if (validateStep()) handleUpdate();
-                  }}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Updating...
-                    </>
-                  ) : (
-                    "Update Course"
-                  )}
-                </Button>
-            </div>
-          </div>
-        </div>
-      </footer>
+
+      {/* Footer removed — each step has its own save controls now */}
     </div>
   );
 }

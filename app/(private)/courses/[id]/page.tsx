@@ -5,6 +5,7 @@ import StudentSingleCourse from "./StudentSingleCourse";
 import { useParams, useSearchParams } from "next/navigation";
 import Loader from "@/components/loader";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import React from "react"; // Add React import for React.use()
 
 export default function DashboardPage({
   searchParams,
@@ -16,15 +17,24 @@ export default function DashboardPage({
   const params = useParams();
   const id = params?.id as string;
 
-  // In a client component we must read query params from the browser using
-  // useSearchParams(). Next may not pass `searchParams` into client components,
-  // so prefer the hook and fall back to the optional prop if provided.
+  // Unwrap searchParams if it's a promise using React.use()
+  let ow: string | undefined;
   const clientSearchParams = useSearchParams?.();
-  const ow = clientSearchParams?.get("ow") ?? searchParams?.ow;
+  if (clientSearchParams) {
+    ow = clientSearchParams.get("ow") ?? undefined;
+  } else if (searchParams) {
+    // If searchParams is a promise, unwrap it
+    // @ts-ignore
+    const unwrapped = typeof searchParams.then === "function" ? React.use(searchParams) : searchParams;
+    // Safely access ow property only if unwrapped is not empty and has ow
+    ow = (unwrapped && typeof unwrapped === "object" && "ow" in unwrapped)
+      ? (unwrapped as { ow?: string }).ow
+      : undefined;
+  }
 
   if (!user || !id)
     return (
-      <div>
+      <div className="pt-9">
         <Loader />
       </div>
     );

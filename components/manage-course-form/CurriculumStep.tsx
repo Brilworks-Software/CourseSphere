@@ -3,13 +3,12 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Trash2, Pencil, ExternalLink, MoreVertical, Video, Layers } from "lucide-react";
-import Link from "next/link";
+import { Plus, Trash2, Pencil, MoreVertical, Video, Layers } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { UploadCloud, CheckCircle2, XCircle, RefreshCcw } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
+import MediaUploader from "@/components/MediaUploader";
 
 
 interface CurriculumStepProps {
@@ -209,13 +208,6 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
     setLoading(false);
   }
 
-  // Video upload helpers
-  const getCloudinaryVideoUrl = (publicId: string) => {
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    if (!cloudName) return "";
-    return `https://res.cloudinary.com/${cloudName}/video/upload/${publicId}.mp4`;
-  };
-
   // Open/close upload UI for a lesson
   const toggleVideoUpload = (lessonId: string, show: boolean) => {
     setVideoUploadState(prev => ({
@@ -230,115 +222,6 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
       },
     }));
   };
-
-  // Handle file select
-  const handleVideoFileChange = (lessonId: string, file: File | null) => {
-    setVideoUploadState(prev => ({
-      ...prev,
-      [lessonId]: {
-        ...prev[lessonId],
-        file,
-        error: null,
-        success: false,
-      },
-    }));
-  };
-
-  // Handle video upload
-  const handleVideoUpload = async (lessonId: string, lessonTitle: string, e: React.FormEvent) => {
-    e.preventDefault();
-    setVideoUploadState(prev => ({
-      ...prev,
-      [lessonId]: {
-        ...prev[lessonId],
-        uploading: true,
-        progress: 0,
-        error: null,
-        success: false,
-      },
-    }));
-    const state = videoUploadState[lessonId];
-    const videoFile = state?.file;
-    if (!videoFile) {
-      setVideoUploadState(prev => ({
-        ...prev,
-        [lessonId]: { ...prev[lessonId], error: "Please select a video file.", uploading: false },
-      }));
-      return;
-    }
-    try {
-      // Upload to Cloudinary
-      const formData = new FormData();
-      formData.append("file", videoFile);
-      const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "course_videos";
-      formData.append("upload_preset", uploadPreset);
-      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-      if (!cloudName) throw new Error("Cloudinary cloud name not configured.");
-      const xhr = new XMLHttpRequest();
-      xhr.open("POST", `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`);
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          setVideoUploadState(prev => ({
-            ...prev,
-            [lessonId]: {
-              ...prev[lessonId],
-              progress: Math.round((event.loaded / event.total) * 100),
-            },
-          }));
-        }
-      };
-      const uploadPromise = new Promise<any>((resolve, reject) => {
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(JSON.parse(xhr.responseText));
-          } else {
-            reject(new Error(JSON.parse(xhr.responseText)?.error?.message || "Failed to upload video"));
-          }
-        };
-        xhr.onerror = () => reject(new Error("Network error"));
-      });
-      xhr.send(formData);
-      const uploadData = await uploadPromise;
-      // Update lesson video_url via API
-      const response = await fetch(`/api/admin/courses/lesson/${lessonId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          video_url: uploadData.public_id,
-          duration: uploadData.duration ? Math.round(uploadData.duration) : null,
-        }),
-      });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to update lesson");
-      }
-      setVideoUploadState(prev => ({
-        ...prev,
-        [lessonId]: {
-          ...prev[lessonId],
-          uploading: false,
-          progress: 0,
-          error: null,
-          success: true,
-          file: null,
-        },
-      }));
-      await fetchSections();
-    } catch (err: any) {
-      setVideoUploadState(prev => ({
-        ...prev,
-        [lessonId]: {
-          ...prev[lessonId],
-          uploading: false,
-          error: err.message,
-        },
-      }));
-    }
-  };
-
-  // Use shadcn colors for bg and border
-  const sectionBg = "bg-muted";
-  const sectionBorder = "border border-border";
 
   return (
     <div className="space-y-6">
@@ -372,9 +255,9 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
             {sections.map((section) => {
               const isOpen = expandedSection === section.id;
               return (
-                <AccordionItem key={section.id} value={section.id} className={`mb-3 ${sectionBorder} rounded-lg overflow-hidden`}>
-                  <div className={`flex items-center justify-between w-full px-4 py-3 transition-all ${sectionBg}`}>
-                    <AccordionTrigger className={`flex-1 min-w-0 py-0 w-full ${sectionBg} hover:no-underline`}>
+                <AccordionItem key={section.id} value={section.id} className={`mb-3  rounded-lg overflow-hidden`}>
+                  <div className={`flex items-center justify-between w-full px-4 py-3 transition-all `}>
+                    <AccordionTrigger className={`flex-1 min-w-0 py-0 w-full  hover:no-underline`}>
                       <div className="flex items-center gap-2 min-w-0">
                         <Layers className="w-5 h-5 text-primary" />
                         <span className="font-semibold text-lg truncate">{section.title}</span>
@@ -397,7 +280,7 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  <AccordionContent className={sectionBg}>
+                  <AccordionContent >
                     {/* Edit section title inline */}
                     {editingSectionId === section.id && (
                       <form onSubmit={e => { e.preventDefault(); handleEditSection(section.id); }} className="flex gap-2 mx-2">
@@ -418,27 +301,29 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
                               {lesson.video_url && <Video className="w-4 h-4 text-primary" />}
                               <span className="font-medium">{lesson.title}</span>
                             </div>
+                            {/* Video Upload/Change Button OUTSIDE More menu */}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="mr-2 flex items-center gap-1"
+                              onClick={() => toggleVideoUpload(lesson.id, !(videoUploadState[lesson.id]?.show))}
+                            >
+                              {lesson.video_url ? (
+                                <>
+                                  <RefreshCcw className="w-4 h-4" /> Change Video
+                                </>
+                              ) : (
+                                <>
+                                  <UploadCloud className="w-4 h-4" /> Upload Video
+                                </>
+                              )}
+                            </Button>
+                            {/* More menu for Edit/Delete */}
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button size="icon" variant="ghost"><MoreVertical className="w-4 h-4" /></Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent>
-                                <DropdownMenuItem asChild>
-                                  <Link href={`/courses/lesson/${lesson.id}`}>
-                                    <ExternalLink className="w-4 h-4 mr-2" /> Manage Lesson
-                                  </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => toggleVideoUpload(lesson.id, !(videoUploadState[lesson.id]?.show))}>
-                                  {lesson.video_url ? (
-                                    <>
-                                      <RefreshCcw className="w-4 h-4 mr-2" /> Change Lesson Video
-                                    </>
-                                  ) : (
-                                    <>
-                                      <UploadCloud className="w-4 h-4 mr-2" /> Upload Lesson Video
-                                    </>
-                                  )}
-                                </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => { setEditingLessonId(lesson.id); setLessonTitleEdit(lesson.title); }}>
                                   <Pencil className="w-4 h-4 mr-2" /> Edit Lesson Title
                                 </DropdownMenuItem>
@@ -458,52 +343,68 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
                           )}
                           {/* Video upload UI for this lesson */}
                           {videoUploadState[lesson.id]?.show && (
-                            <form onSubmit={e => handleVideoUpload(lesson.id, lesson.title, e)} className="mt-3 border rounded-lg p-4 bg-muted">
-                              <div className="flex flex-col md:flex-row gap-4 items-center">
-                                <input
-                                  type="file"
-                                  accept="video/mp4,video/mov,video/webm"
-                                  className="hidden"
-                                  id={`video-upload-input-${lesson.id}`}
-                                  disabled={videoUploadState[lesson.id]?.uploading}
-                                  onChange={e => handleVideoFileChange(lesson.id, e.target.files?.[0] || null)}
-                                />
-                                <label htmlFor={`video-upload-input-${lesson.id}`} className="flex-1 cursor-pointer flex items-center gap-2 border rounded p-2 bg-background hover:bg-muted transition-colors">
-                                  <UploadCloud className="w-6 h-6 text-primary" />
-                                  <span className="text-sm">
-                                    {videoUploadState[lesson.id]?.file?.name || "Select Video"}
-                                  </span>
-                                </label>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() => handleVideoFileChange(lesson.id, null)}
-                                  disabled={videoUploadState[lesson.id]?.uploading || !videoUploadState[lesson.id]?.file}
-                                >
-                                  Clear
-                                </Button>
-                                <Button
-                                  type="submit"
-                                  disabled={videoUploadState[lesson.id]?.uploading || !videoUploadState[lesson.id]?.file}
-                                >
-                                  {videoUploadState[lesson.id]?.uploading ? `Uploading... (${videoUploadState[lesson.id]?.progress}%)` : (lesson.video_url ? "Change Video" : "Upload Video")}
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  onClick={() => toggleVideoUpload(lesson.id, false)}
-                                  disabled={videoUploadState[lesson.id]?.uploading}
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-                              {/* Progress, error, success */}
+                            <div className="mt-3 border rounded-lg p-4 bg-muted">
+                              <MediaUploader
+                                type="video"
+                                label="Upload Lesson Video"
+                                onUploaded={async (publicUrl: string, uploadUrl?: string) => {
+                                  // Save both publicUrl and uploadUrl to lesson
+                                  setVideoUploadState(prev => ({
+                                    ...prev,
+                                    [lesson.id]: {
+                                      ...prev[lesson.id],
+                                      uploading: true,
+                                      error: null,
+                                      success: false,
+                                    },
+                                  }));
+                                  try {
+                                    const response = await fetch(`/api/admin/courses/lesson/${lesson.id}`, {
+                                      method: "PATCH",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({
+                                        video_url: publicUrl,
+                                        uploadUrl: uploadUrl || null,
+                                      }),
+                                    });
+                                    if (!response.ok) {
+                                      const data = await response.json();
+                                      throw new Error(data.error || "Failed to update lesson");
+                                    }
+                                    setVideoUploadState(prev => ({
+                                      ...prev,
+                                      [lesson.id]: {
+                                        ...prev[lesson.id],
+                                        uploading: false,
+                                        error: null,
+                                        success: true,
+                                      },
+                                    }));
+                                    await fetchSections();
+                                  } catch (err: any) {
+                                    setVideoUploadState(prev => ({
+                                      ...prev,
+                                      [lesson.id]: {
+                                        ...prev[lesson.id],
+                                        uploading: false,
+                                        error: err.message,
+                                      },
+                                    }));
+                                  }
+                                }}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => toggleVideoUpload(lesson.id, false)}
+                                disabled={videoUploadState[lesson.id]?.uploading}
+                                className="mt-2"
+                              >
+                                Cancel
+                              </Button>
                               {videoUploadState[lesson.id]?.uploading && (
-                                <div className="mt-2">
-                                  <Progress value={videoUploadState[lesson.id]?.progress} className="h-2" />
-                                  <div className="text-xs text-muted-foreground mt-1 text-center">
-                                    Uploading... {videoUploadState[lesson.id]?.progress}%
-                                  </div>
+                                <div className="mt-2 text-xs text-muted-foreground text-center">
+                                  Uploading...
                                 </div>
                               )}
                               {videoUploadState[lesson.id]?.error && (
@@ -521,7 +422,7 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
                               <div className="text-xs text-muted-foreground mt-2">
                                 Note: All files should be at least 720p and less than 4.0 GB.
                               </div>
-                            </form>
+                            </div>
                           )}
                         </div>
                       ))}

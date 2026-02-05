@@ -9,16 +9,13 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
-
 import { Dropzone, DropzoneEmptyState } from "@/components/kibo-ui/dropzone";
-
 import {
   ImageCrop,
   ImageCropContent,
   ImageCropApply,
   ImageCropReset,
 } from "@/components/kibo-ui/image-crop";
-import { supabase } from "@/lib/supabaseClient";
 
 // Popular aspect ratio presets
 export const ASPECT_RATIOS = {
@@ -125,25 +122,48 @@ export default function ImageUploadWithCrop({
     // Do not close dialog here
   };
 
-  // Upload cropped image to Supabase Storage
-  const handleSupabaseUpload = async () => {
+  // Upload cropped image to S3
+  const handleS3Upload = async () => {
     if (!croppedFile) {
       return;
     }
     setUploading(true);
     try {
-      const filePath = `public/thumbnails/${Date.now()}_${croppedFile.name}`;
-      const { data, error } = await supabase.storage
-        .from(IMAGE_BUCKET) // <-- replace with your bucket
-        .upload(filePath, croppedFile, { upsert: true });
-      if (error) throw error;
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from(IMAGE_BUCKET)
-        .getPublicUrl(filePath);
-      const publicUrl = urlData?.publicUrl;
-      if (!publicUrl) throw new Error("Failed to get public URL");
-      onChange(publicUrl, croppedFile);
+      // Request S3 upload URL
+      const res = await fetch("/api/s3/upload-url", {
+        method: "POST",
+        body: JSON.stringify({
+          fileName: croppedFile.name,
+          fileType: croppedFile.type,
+          category: "image",
+        }),
+      });
+
+      if (!res.ok) {
+        alert("Failed to get S3 upload URL");
+        setUploading(false);
+        return;
+      }
+
+      const data = await res.json();
+      // Upload to S3 using XMLHttpRequest for progress (optional)
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", data.uploadUrl);
+        xhr.setRequestHeader("Content-Type", croppedFile.type);
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error("Failed to upload to S3."));
+          }
+        };
+        xhr.onerror = () => reject(new Error("Failed to upload to S3."));
+        xhr.send(croppedFile);
+      });
+
+      // Use publicUrl from API response
+      onChange(data.publicUrl, croppedFile);
       closeDialog();
     } catch (err) {
       alert("Upload failed: " + (err as Error).message);
@@ -303,7 +323,7 @@ export default function ImageUploadWithCrop({
                 />
               ) : null}
               <div className="flex w-full gap-2 flex-col md:flex-row justify-center">
-                <Button onClick={handleSupabaseUpload} disabled={uploading}>
+                <Button onClick={handleS3Upload} disabled={uploading}>
                   {uploading ? "Uploading..." : "Upload Image"}
                 </Button>
                 <Button
