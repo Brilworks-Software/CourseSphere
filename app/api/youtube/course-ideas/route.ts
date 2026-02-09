@@ -33,7 +33,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    let analysisData: any = {};
+    let analysisData: any = {
+      channelName: '',
+      channelImage: '',
+      subscribers: 0,
+      avgViews: 0,
+      avgComments: 0,
+      totalPosts: 0,
+      engagementRate: 0,
+    };
 
     // Fetch channel data if channel URL provided
     if (channelHandle) {
@@ -72,20 +80,51 @@ export async function POST(request: NextRequest) {
           totalPosts: data.posts || 0,
           engagementRate: data.engagement_rate?.float_2f || 0,
         };
+        console.log('✅ Social Insider data fetched successfully');
       } else {
-        console.error('Social Insider API error:', response.status, await response.text());
+        const errorText = await response.text();
+        console.error('❌ Social Insider API error:', response.status, errorText);
+        console.log('⚠️ Will attempt to fetch data from YouTube API as fallback');
       }
     }
 
     // Fetch YouTube API data for top videos
     const youtubeApiKey = process.env.YOUTUBE_API_KEY;
     let topVideos: any[] = [];
+    let channelId: string | null = null;
     
     if (youtubeApiKey && channelHandle) {
       // Get channel ID first if we have a handle
-      const channelId = await getChannelIdFromHandle(channelHandle, youtubeApiKey);
+      channelId = await getChannelIdFromHandle(channelHandle, youtubeApiKey);
       
       if (channelId) {
+        // If Social Insider didn't provide data, fetch from YouTube API
+        if (!analysisData.subscribers || analysisData.subscribers === 0) {
+          try {
+            const channelResponse = await fetch(
+              `https://www.googleapis.com/youtube/v3/channels?key=${youtubeApiKey}&id=${channelId}&part=snippet,statistics`
+            );
+            
+            if (channelResponse.ok) {
+              const channelData = await channelResponse.json();
+              if (channelData.items && channelData.items.length > 0) {
+                const channel = channelData.items[0];
+                analysisData.channelName = channel.snippet.title || analysisData.channelName;
+                analysisData.channelImage = channel.snippet.thumbnails?.default?.url || analysisData.channelImage;
+                analysisData.subscribers = parseInt(channel.statistics.subscriberCount) || 0;
+                analysisData.totalPosts = parseInt(channel.statistics.videoCount) || 0;
+                console.log('✅ Fetched channel data from YouTube API:', {
+                  name: analysisData.channelName,
+                  subscribers: analysisData.subscribers,
+                  videos: analysisData.totalPosts
+                });
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching YouTube channel data:', error);
+          }
+        }
+        
         // Fetch top videos from the channel
         const videosResponse = await fetch(
           `https://www.googleapis.com/youtube/v3/search?key=${youtubeApiKey}&channelId=${channelId}&part=snippet&order=viewCount&type=video&maxResults=20`

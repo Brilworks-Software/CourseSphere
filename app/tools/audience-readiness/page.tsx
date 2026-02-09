@@ -195,7 +195,11 @@ export default function AudienceReadinessQuizPage() {
       }
     } catch (error) {
       console.error("Error submitting quiz:", error);
-      alert("Failed to get results. Please try again.");
+      setResults({
+        score: 0,
+        readinessLevel: 'not-ready',
+        insights: 'Failed to get results. Please try again later.'
+      });
     } finally {
       setLoading(false);
     }
