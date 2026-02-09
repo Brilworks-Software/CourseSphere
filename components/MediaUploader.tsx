@@ -1,10 +1,7 @@
 "use client";
 
 import { ChangeEvent, useRef, useState } from "react";
-import {
-  UploadFileType,
-  UploadResponse,
-} from "@/lib/upload.types";
+import { UploadFileType, UploadResponse } from "@/lib/upload.types";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { UploadCloud, CheckCircle2, XCircle } from "lucide-react";
@@ -14,7 +11,11 @@ import React from "react";
 interface MediaUploaderProps {
   type: UploadFileType; // "video" | "image"
   label?: string;
-  onUploaded?: (url: string, uploadUrl?: string) => void;
+  onUploaded?: (
+    url: string,
+    uploadUrl?: string,
+    aws_asset_key?: string,
+  ) => void;
 }
 
 // Dedicated VideoUploader component
@@ -23,7 +24,11 @@ function VideoUploader({
   onUploaded,
 }: {
   label?: string;
-  onUploaded?: (url: string, uploadUrl?: string) => void;
+  onUploaded?: (
+    url: string,
+    uploadUrl?: string,
+    aws_asset_key?: string,
+  ) => void;
 }) {
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -84,7 +89,11 @@ function VideoUploader({
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve();
           } else {
-            reject(new Error("Failed to upload to S3. Please check your AWS credentials and CORS settings."));
+            reject(
+              new Error(
+                "Failed to upload to S3. Please check your AWS credentials and CORS settings.",
+              ),
+            );
           }
         };
         xhr.onerror = () => reject(new Error("Failed to upload to S3."));
@@ -96,7 +105,8 @@ function VideoUploader({
       setError(null);
       setUploading(false);
       setProgress(100);
-      onUploaded?.(data.publicUrl, data.uploadUrl);
+      // Pass aws_asset_key as third argument
+      onUploaded?.(data.publicUrl, data.uploadUrl, data.aws_asset_key);
     } catch (err: any) {
       setError(err.message || "Failed to upload to S3.");
       setUploading(false);

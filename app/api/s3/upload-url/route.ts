@@ -1,68 +1,3 @@
-// import { NextRequest, NextResponse } from "next/server";
-// import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-// import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-// import { UploadRequestBody, UploadResponse, AllowedMimeType, UploadFileType } from "@/lib/upload.types";
-
-// // Explicitly type ALLOWED_MIME_TYPES
-// const ALLOWED_MIME_TYPES: Record<UploadFileType, AllowedMimeType[]> = {
-//   video: ["video/mp4"],
-//   image: ["image/jpeg", "image/png", "image/webp"],
-// };
-
-// const s3 = new S3Client({
-//   region: process.env.AWS_REGION!,
-//   credentials: {
-//     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-//     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-//   },
-// });
-
-// export async function POST(
-//   req: NextRequest
-// ): Promise<NextResponse<UploadResponse>> {
-//   const body = (await req.json()) as UploadRequestBody;
-
-//   const { fileName, fileType, category } = body;
-
-//   // Ensure category is a valid key
-//   if (!(category in ALLOWED_MIME_TYPES)) {
-//     return NextResponse.json(
-//       { message: "Unsupported category" } as any,
-//       { status: 400 }
-//     );
-//   }
-
-//   // No need for type assertion now
-//   const allowedTypes = ALLOWED_MIME_TYPES[category];
-
-//   if (!allowedTypes.includes(fileType)) {
-//     return NextResponse.json(
-//       { message: "Unsupported file type" } as any,
-//       { status: 400 }
-//     );
-//   }
-
-//   const key = `${category}s/${Date.now()}-${fileName}`;
-
-//   const command = new PutObjectCommand({
-//     Bucket: process.env.AWS_S3_BUCKET!,
-//     Key: key,
-//     ContentType: fileType,
-//   });
-
-//   const uploadUrl = await getSignedUrl(s3, command, {
-//     expiresIn: 60,
-//   });
-
-//   // Fix: Use the actual object key for publicUrl
-//   const publicUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
-
-//   return NextResponse.json({
-//     uploadUrl,
-//     publicUrl,
-//     category,
-//   });
-// }
 import { NextRequest, NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -72,6 +7,10 @@ import {
   AllowedMimeType,
   UploadFileType,
 } from "@/lib/upload.types";
+
+// S3 folder constants for asset management
+const S3_VIDEO_FOLDER = process.env.AWS_VIDEO_FOLDER || "videos";
+const S3_IMAGE_FOLDER = process.env.AWS_IMAGE_FOLDER || "images";
 
 const ALLOWED_MIME_TYPES: Record<UploadFileType, AllowedMimeType[]> = {
   video: ["video/mp4"],
@@ -96,7 +35,7 @@ function toSnakeCase(str: string): string {
 }
 
 export async function POST(
-  req: NextRequest
+  req: NextRequest,
 ): Promise<NextResponse<UploadResponse>> {
   const body = (await req.json()) as UploadRequestBody;
   const { fileName, fileType, category } = body;
@@ -116,7 +55,16 @@ export async function POST(
 
   // Convert fileName to snake_case for S3 key, but also keep original fileName in the key as requested
   const safeFileName = toSnakeCase(fileName);
-  const key = `${category}s/${Date.now()}-${safeFileName}-${fileName}`;
+
+  // Use folder constants for S3 key
+  const folder =
+    category === "video"
+      ? S3_VIDEO_FOLDER
+      : category === "image"
+        ? S3_IMAGE_FOLDER
+        : "others";
+  const keyWithoutFolder = `${Date.now()}-${safeFileName}`;
+  const key = `${folder}/${keyWithoutFolder}`;
 
   const command = new PutObjectCommand({
     Bucket: process.env.AWS_S3_BUCKET!,
@@ -133,11 +81,12 @@ export async function POST(
     expiresIn: 60,
   });
 
-  const publicUrl =`https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`// Return empty string for videos
+  const publicUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`; // Return empty string for videos
 
   return NextResponse.json({
     uploadUrl,
     publicUrl,
     category,
+    aws_asset_key: keyWithoutFolder,
   });
 }

@@ -32,7 +32,7 @@ export default async function Page({ params }: Props) {
 
   let res: Response;
   try {
-    res = await fetch(`/api/live-stream?id=${encodeURIComponent(id)}`);
+    res = await fetch(`/api/live-stream?stream_id=${encodeURIComponent(id)}`);
   } catch (e) {
     return (
       <div className="p-6">

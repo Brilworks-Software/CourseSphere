@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import Tabs from "@/components/course/StudrntSingleCourseTabs";
+import Tabs from "@/components/course/StudentSingleCourseTabs";
 import CurriculumAccordion from "@/components/course/CurriculumAccordion";
 
 interface EnrolledViewProps {
@@ -37,6 +37,7 @@ export default function EnrolledView({
                       src={signedVideoUrl || ""}
                       controls
                       controlsList="nodownload"
+                      preload="metadata"
                       className="w-full h-full"
                     />
                   </div>
