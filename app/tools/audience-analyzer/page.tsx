@@ -58,9 +58,11 @@ export default function AudienceAnalyzerPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [videoTitle, setVideoTitle] = useState("");
   const [channelName, setChannelName] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
+    setError(null);
     
     try {
       const response = await fetch('/api/youtube/audience-analyzer', {
@@ -82,7 +84,8 @@ export default function AudienceAnalyzerPage() {
       setChannelName(data.channelName || '');
     } catch (error) {
       console.error('Analysis error:', error);
-      alert('Failed to analyze. Please check the URL and try again.');
+      setError(error instanceof Error ? error.message : 'Failed to analyze. Please check the URL and try again.');
+      setResult(null);
     } finally {
       setIsAnalyzing(false);
     }
@@ -92,8 +95,7 @@ export default function AudienceAnalyzerPage() {
     setInputUrl("");
     setResult(null);
     setVideoTitle("");
-    setChannelName("");
-  };
+    setChannelName("");    setError(null);  };
 
   const getColorForLevel = (level: string) => {
     switch (level) {
@@ -214,7 +216,11 @@ export default function AudienceAnalyzerPage() {
                     </p>
                   </div>
                 </div>
-
+                {error && (
+                  <div className="p-4 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
+                    <p className="text-sm text-red-900 dark:text-red-100">{error}</p>
+                  </div>
+                )}
                 <Button 
                   className="w-full" 
                   size="lg" 

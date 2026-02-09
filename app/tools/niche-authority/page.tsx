@@ -81,8 +81,7 @@ export default function NicheAuthorityPage() {
   const [result, setResult] = useState<AuthorityResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [channelName, setChannelName] = useState("");
-  const [channelImage, setChannelImage] = useState("");
-
+  const [channelImage, setChannelImage] = useState("");  const [error, setError] = useState<string | null>(null);
   const niches = [
     "Technology & Programming",
     "Business & Finance",
@@ -105,6 +104,7 @@ export default function NicheAuthorityPage() {
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
+    setError(null);
     
     try {
       if (useYouTubeUrl) {
@@ -139,7 +139,8 @@ export default function NicheAuthorityPage() {
       }
     } catch (error) {
       console.error('Analysis error:', error);
-      alert('Failed to analyze. Please try again.');
+      setError(error instanceof Error ? error.message : 'Failed to analyze. Please try again.');
+      setResult(null);
     } finally {
       setIsAnalyzing(false);
     }

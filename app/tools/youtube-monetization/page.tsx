@@ -66,8 +66,7 @@ export default function YouTubeMonetizationPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [channelName, setChannelName] = useState("");
   const [channelImage, setChannelImage] = useState("");
-  const [fetchedEngagementRate, setFetchedEngagementRate] = useState<number | null>(null);
-
+  const [fetchedEngagementRate, setFetchedEngagementRate] = useState<number | null>(null);  const [error, setError] = useState<string | null>(null);
   const niches = [
     "Technology & Programming",
     "Business & Finance",
@@ -238,16 +237,17 @@ export default function YouTubeMonetizationPage() {
 
   const handleAnalyze = async () => {
     if (useChannelUrl && !channelUrl) {
-      alert("Please enter a YouTube channel URL");
+      setError("Please enter a YouTube channel URL");
       return;
     }
     
     if (!useChannelUrl && (!subscribers || !avgViews || !niche)) {
-      alert("Please fill in all required fields");
+      setError("Please fill in all required fields");
       return;
     }
 
     setIsAnalyzing(true);
+    setError(null);
     
     try {
       if (useChannelUrl) {
@@ -316,7 +316,8 @@ export default function YouTubeMonetizationPage() {
       }
     } catch (error) {
       console.error('Analysis error:', error);
-      alert('Failed to analyze channel. Please try manual input or check the URL.');
+      setError(error instanceof Error ? error.message : 'Failed to analyze channel. Please try manual input or check the URL.');
+      setResult(null);
     } finally {
       setIsAnalyzing(false);
     }

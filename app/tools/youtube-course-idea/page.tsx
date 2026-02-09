@@ -27,7 +27,8 @@ import {
   ThumbsUp,
   MessageCircle,
   Eye,
-  Calendar
+  Calendar,
+  Info
 } from "lucide-react";
 import { LandingHeader } from "@/components/landing-header";
 import { LandingFooter } from "@/components/landing-footer";
@@ -312,7 +313,9 @@ export default function YouTubeCourseIdeaPage() {
                         <div>
                           <p className="text-sm text-muted-foreground">Subscribers</p>
                           <p className="text-xl font-bold">
-                            {channelData.subscribers?.toLocaleString() || "N/A"}
+                            {(channelData.subscribers && channelData.subscribers > 0) 
+                              ? channelData.subscribers.toLocaleString() 
+                              : "N/A"}
                           </p>
                         </div>
                       </div>
@@ -321,7 +324,9 @@ export default function YouTubeCourseIdeaPage() {
                         <div>
                           <p className="text-sm text-muted-foreground">Avg Views</p>
                           <p className="text-xl font-bold">
-                            {channelData.avgViews?.toLocaleString() || "N/A"}
+                            {(channelData.avgViews && channelData.avgViews > 0) 
+                              ? channelData.avgViews.toLocaleString() 
+                              : "N/A"}
                           </p>
                         </div>
                       </div>
@@ -330,7 +335,9 @@ export default function YouTubeCourseIdeaPage() {
                         <div>
                           <p className="text-sm text-muted-foreground">Engagement</p>
                           <p className="text-xl font-bold">
-                            {channelData.engagementRate?.toFixed(2) || "N/A"}%
+                            {(channelData.engagementRate && channelData.engagementRate > 0) 
+                              ? channelData.engagementRate.toFixed(2) + "%" 
+                              : "N/A"}
                           </p>
                         </div>
                       </div>
@@ -339,11 +346,21 @@ export default function YouTubeCourseIdeaPage() {
                         <div>
                           <p className="text-sm text-muted-foreground">Total Videos</p>
                           <p className="text-xl font-bold">
-                            {channelData.totalPosts?.toLocaleString() || "N/A"}
+                            {(channelData.totalPosts && channelData.totalPosts > 0) 
+                              ? channelData.totalPosts.toLocaleString() 
+                              : "N/A"}
                           </p>
                         </div>
                       </div>
                     </div>
+                    {(!channelData.subscribers || channelData.subscribers === 0) && (
+                      <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <p className="text-sm text-blue-900 dark:text-blue-100">
+                          <Info className="inline h-4 w-4 mr-2" />
+                          Some channel statistics may not be available. Course ideas will be generated based on content analysis.
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ) : inputType === 'video' && channelData.videoThumbnail ? (
@@ -555,7 +572,7 @@ export default function YouTubeCourseIdeaPage() {
                   </motion.div>
                 ))}
 
-                {/* Raw Analysis (Optional Debug) */}
+                {/* Raw Analysis (Optional Debug)
                 {rawAnalysis && (
                   <Card className="mt-8">
                     <CardHeader>
@@ -570,7 +587,7 @@ export default function YouTubeCourseIdeaPage() {
                       </pre>
                     </CardContent>
                   </Card>
-                )}
+                )} */}
               </motion.div>
             )}
           </AnimatePresence>

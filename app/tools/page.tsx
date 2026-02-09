@@ -13,7 +13,10 @@ import {
   Lightbulb,
   MessageSquare,
   Award,
-  GraduationCap
+  GraduationCap,
+  BookOpen,
+  Eye,
+  Briefcase
 } from "lucide-react";
 import { LandingHeader } from "@/components/landing-header";
 import { LandingFooter } from "@/components/landing-footer";
@@ -56,6 +59,42 @@ export default function ToolsPage() {
       href: "/tools/audience-analyzer",
       badge: "🔥 AI-Powered",
       features: ["Comment skill analysis", "Question pattern detection", "Course level recommendation", "Pricing strategy"]
+    },
+    {
+      title: "Top Courses in Your Niche",
+      description: "Discover what courses exist in your niche. Competition = Validation. See pricing patterns, identify gaps, and find opportunities.",
+      icon: BookOpen,
+      iconColor: "text-blue-600",
+      href: "/tools/niche-explorer",
+      badge: "🔥 AI-Powered",
+      features: ["Course discovery", "Pricing analysis", "Market trends", "Gap identification"]
+    },
+    {
+      title: "What Other Creators Are Selling",
+      description: "Peek behind the curtain. See what creators in your niche are selling, find gaps, and discover your unique differentiation angle.",
+      icon: Eye,
+      iconColor: "text-purple-600",
+      href: "/tools/creator-niche-scan",
+      badge: "🔥 AI-Powered",
+      features: ["Creator offerings scan", "Format analysis", "Opportunity discovery", "Differentiation strategies"]
+    },
+    {
+      title: "Creator Course Revenue Calculator",
+      description: "How much money could you actually make from a course? Get realistic revenue estimates based on your audience size and engagement.",
+      icon: DollarSign,
+      iconColor: "text-green-600",
+      href: "/tools/revenue-calculator",
+      badge: "Calculator",
+      features: ["3 revenue scenarios", "AdSense comparison", "Conservative estimates", "Trust-building projections"]
+    },
+    {
+      title: "Sponsorship vs Course Income",
+      description: "Break free from brand dependency. Compare sponsorship deals vs course income to see which path builds real wealth.",
+      icon: Briefcase,
+      iconColor: "text-orange-600",
+      href: "/tools/sponsorship-vs-course",
+      badge: "🔥 AI-Powered",
+      features: ["Income comparison", "Time vs money analysis", "Control assessment", "Compounding explained"]
     },
     {
       title: "YouTube Monetization Readiness",
