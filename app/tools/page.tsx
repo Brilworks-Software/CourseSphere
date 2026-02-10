@@ -16,7 +16,19 @@ import {
   GraduationCap,
   BookOpen,
   Eye,
-  Briefcase
+  Briefcase,
+  Calendar,
+  Shield,
+  Heart,
+  Video,
+  Target,
+  Rocket,
+  CheckSquare,
+  Link2,
+  FileText,
+  Layers,
+  Package,
+  RefreshCw
 } from "lucide-react";
 import { LandingHeader } from "@/components/landing-header";
 import { LandingFooter } from "@/components/landing-footer";
@@ -61,6 +73,60 @@ export default function ToolsPage() {
       features: ["Comment skill analysis", "Question pattern detection", "Course level recommendation", "Pricing strategy"]
     },
     {
+      title: "Audience Trust Index",
+      description: "Will your audience actually buy from you? Analyze trust signals in your comments to see proof they already view you as a teacher.",
+      icon: Heart,
+      iconColor: "text-pink-600",
+      href: "/tools/audience-trust",
+      badge: "🔥 AI-Powered",
+      features: ["Trust score", "Real comment examples", "Buying confidence", "Teacher validation"]
+    },
+    {
+      title: "Turn Video Into Course Outline",
+      description: "Already have content? Convert your video, transcript, or outline into a structured course with AI-powered modules and lessons.",
+      icon: Video,
+      iconColor: "text-cyan-600",
+      href: "/tools/video-to-course",
+      badge: "🔥 AI-Powered",
+      features: ["Course title & modules", "Lesson breakdown", "Learning outcomes", "Suggested exercises"]
+    },
+    {
+      title: "Outcome-Based Curriculum Generator",
+      description: "Stop building content-heavy courses. Design a transformation-first curriculum that reverse-engineers from the final outcome.",
+      icon: Target,
+      iconColor: "text-purple-600",
+      href: "/tools/curriculum-generator",
+      badge: "🔥 AI-Powered",
+      features: ["Week-by-week plan", "Outcome milestones", "Skills mapping", "Assessments"]
+    },
+    {
+      title: "7-Day Course Launch Planner",
+      description: "Stop overthinking your launch. Get a day-by-day action plan with templates, posts, and emails to launch with confidence.",
+      icon: Rocket,
+      iconColor: "text-orange-600",
+      href: "/tools/launch-planner",
+      badge: "🔥 AI-Powered",
+      features: ["Day-by-day plan", "Email templates", "Post ideas", "Webinar pitch"]
+    },
+    {
+      title: "First Cohort Launch Checklist",
+      description: "Never forget critical launch steps. Get a complete checklist with risk warnings to launch your first cohort with confidence.",
+      icon: CheckSquare,
+      iconColor: "text-green-600",
+      href: "/tools/cohort-checklist",
+      badge: "🔥 AI-Powered",
+      features: ["Complete checklist", "Risk warnings", "Priority guidance", "Progress tracking"]
+    },
+    {
+      title: "Link-in-Bio Monetization Audit",
+      description: "Why do people click but not buy? Audit your bio link for monetization leaks and get specific fixes.",
+      icon: Link2,
+      iconColor: "text-purple-600",
+      href: "/tools/bio-link-audit",
+      badge: "🔥 AI-Powered",
+      features: ["Monetization score", "Friction analysis", "Top 3 fixes", "Optimized layout"]
+    },
+    {
       title: "Top Courses in Your Niche",
       description: "Discover what courses exist in your niche. Competition = Validation. See pricing patterns, identify gaps, and find opportunities.",
       icon: BookOpen,
@@ -77,6 +143,51 @@ export default function ToolsPage() {
       href: "/tools/creator-niche-scan",
       badge: "🔥 AI-Powered",
       features: ["Creator offerings scan", "Format analysis", "Opportunity discovery", "Differentiation strategies"]
+    },
+    {
+      title: "Course Pricing Optimizer",
+      description: "Overcome pricing fear with data-driven recommendations. Get confident price ranges with AI-powered justification for your niche, format, and audience.",
+      icon: DollarSign,
+      iconColor: "text-emerald-600",
+      href: "/tools/pricing-optimizer",
+      badge: "🔥 AI-Powered",
+      features: ["3 pricing tiers", "Format multipliers", "Niche benchmarks", "Positioning strategy"]
+    },
+    {
+      title: "Cohort vs Self-Paced Recommendation",
+      description: "Should you launch a live cohort or self-paced course? Get a personalized recommendation based on your time, audience, and goals.",
+      icon: Calendar,
+      iconColor: "text-pink-600",
+      href: "/tools/cohort-recommendation",
+      badge: "🔥 AI-Powered",
+      features: ["Decision matrix", "Score comparison", "Next steps", "Format insights"]
+    },
+    {
+      title: "Live Workshop ROI Estimator",
+      description: "Is it worth doing a live workshop? Calculate your ROI and see how workshops compare to sponsorships and other income streams.",
+      icon: Calendar,
+      iconColor: "text-cyan-600",
+      href: "/tools/workshop-roi",
+      badge: "🔥 AI-Powered",
+      features: ["ROI calculation", "Income comparisons", "Low-risk framing", "Confidence factors"]
+    },
+    {
+      title: "Cohort Size & Pricing Planner",
+      description: "Stop guessing how many students to take. Get personalized cohort size and pricing recommendations that protect your energy.",
+      icon: Users,
+      iconColor: "text-violet-600",
+      href: "/tools/cohort-size-planner",
+      badge: "🔥 AI-Powered",
+      features: ["Optimal cohort size", "Smart pricing", "Energy cost analysis", "Revenue projections"]
+    },
+    {
+      title: "Creator Income Stability Score",
+      description: "Courses aren't risky—dependence is. Measure your income stability and discover how owned assets protect you from platform volatility.",
+      icon: Shield,
+      iconColor: "text-indigo-600",
+      href: "/tools/income-stability",
+      badge: "🔥 AI-Powered",
+      features: ["Stability score", "Risk assessment", "Platform dependence", "Improvement plan"]
     },
     {
       title: "Creator Course Revenue Calculator",
@@ -97,6 +208,15 @@ export default function ToolsPage() {
       features: ["Income comparison", "Time vs money analysis", "Control assessment", "Compounding explained"]
     },
     {
+      title: "YouTube Description Funnel Optimizer",
+      description: "Turn views into traffic. Analyze your YouTube description and get an AI-optimized version designed to convert viewers into students.",
+      icon: FileText,
+      iconColor: "text-red-500",
+      href: "/tools/description-optimizer",
+      badge: "🔥 AI-Powered",
+      features: ["Evaluation scores", "Optimized copy", "Pinned comment", "CTA variations"]
+    },
+    {
       title: "YouTube Monetization Readiness",
       description: "Check how close you are to meeting YouTube's monetization requirements. Get instant feedback on your progress.",
       icon: Youtube,
@@ -115,6 +235,15 @@ export default function ToolsPage() {
       features: ["Analyze engagement rate", "Evaluate audience size", "Get actionable insights"]
     },
     {
+      title: "Course Platform Fit Finder",
+      description: "Most platforms are not built for creators. Find which platform actually fits your teaching style and goals.",
+      icon: Layers,
+      iconColor: "text-blue-600",
+      href: "/tools/platform-fit-finder",
+      badge: "🔥 AI-Powered",
+      features: ["Platform comparison", "Trade-off analysis", "Personalized recommendation", "Next steps"]
+    },
+    {
       title: "Course Pricing Calculator",
       description: "Get a suggested price for your online course based on duration, expertise level, and additional offerings.",
       icon: DollarSign,
@@ -122,6 +251,24 @@ export default function ToolsPage() {
       href: "/tools/pricing-calculator",
       badge: "Calculator",
       features: ["Duration-based pricing", "Expertise multiplier", "Support add-ons"]
+    },
+    {
+      title: "Tool Stack Cost Analyzer",
+      description: "Stop paying twice for your tools. Calculate the true cost of tool sprawl: subscription fees plus mental load.",
+      icon: Package,
+      iconColor: "text-orange-600",
+      href: "/tools/tool-stack-analyzer",
+      badge: "🔥 AI-Powered",
+      features: ["Monthly cost breakdown", "Time cost calculation", "Complexity score", "Consolidation recommendations"]
+    },
+    {
+      title: "Migration Effort Estimator",
+      description: "Migration will not be painful. See exactly how long it takes to move your courses. Most creators finish in under a day.",
+      icon: RefreshCw,
+      iconColor: "text-blue-600",
+      href: "/tools/migration-estimator",
+      badge: "🔥 AI-Powered",
+      features: ["Time estimate", "Step-by-step plan", "Risk assessment", "Migration support"]
     },
     {
       title: "Revenue Projection Tool",
@@ -187,7 +334,7 @@ function ToolCard({ tool, index }: { tool: any; index: number }) {
       <Card className="h-full hover:shadow-lg transition-shadow duration-300 group">
         <CardHeader>
           <div className="flex items-center gap-2 mb-2">
-            <Icon className={`h-6 w-6 ${tool.iconColor}`} />
+            <Icon className={tool.iconColor + " h-6 w-6"} />
             <Badge variant="secondary">{tool.badge}</Badge>
           </div>
           <CardTitle className="text-xl">{tool.title}</CardTitle>

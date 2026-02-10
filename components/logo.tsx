@@ -36,8 +36,7 @@ export default function Logo({
 
   return (
     <div
-      className={`flex items-center ${direction} ${className}`}
-      style={{ gap }}
+      className={`flex items-center gap-2.5 ${direction} ${className}`}
     >
       <Image src={src} alt="Logo" width={width} height={height} />
       {text && (
