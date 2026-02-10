@@ -15,4 +15,5 @@ export interface UploadResponse {
   uploadUrl: string;
   publicUrl: string;
   category: UploadFileType;
+  aws_asset_key: string;
 }

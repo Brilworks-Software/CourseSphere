@@ -496,8 +496,9 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
                                 onUploaded={async (
                                   publicUrl: string,
                                   uploadUrl?: string,
+                                  aws_asset_key?: string, // Accept aws_asset_key
                                 ) => {
-                                  // Save both publicUrl and uploadUrl to lesson
+                                  // Save both publicUrl, uploadUrl, aws_asset_key to lesson
                                   setVideoUploadState((prev) => ({
                                     ...prev,
                                     [lesson.id]: {
@@ -518,6 +519,7 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
                                         body: JSON.stringify({
                                           video_url: publicUrl,
                                           uploadUrl: uploadUrl || null,
+                                          aws_asset_key: aws_asset_key || null,
                                         }),
                                       },
                                     );

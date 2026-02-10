@@ -3,22 +3,25 @@ import { NextResponse } from "next/server";
 
 export async function PATCH(
   request: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await context.params;
     const supabase = await createClient();
     const body = await request.json();
 
-    // Only allow updating video_url and duration
+    // Allow updating video_url, uploadUrl, aws_asset_key, and duration
     const updateData: any = {};
     if (body.video_url !== undefined) updateData.video_url = body.video_url;
     if (body.duration !== undefined) updateData.duration = body.duration;
+    if (body.uploadUrl !== undefined) updateData.uploadUrl = body.uploadUrl;
+    if (body.aws_asset_key !== undefined)
+      updateData.aws_asset_key = body.aws_asset_key;
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
         { error: "No valid fields to update." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -39,7 +42,7 @@ export async function PATCH(
 
 export async function GET(
   request: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await context.params;

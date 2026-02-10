@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     if (!courseId || !studentId) {
       return NextResponse.json(
         { error: "Missing courseId or studentId" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
           id, name, slug, logo_url, thumbnail_url
         ),
         lessons:lessons(count)
-      `
+      `,
       )
       .eq("id", courseId)
       .single();
@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     if (sectionsError) {
       return NextResponse.json(
         { error: sectionsError.message },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -56,15 +56,32 @@ export async function GET(request: Request) {
     if (lessonsError) {
       return NextResponse.json(
         { error: lessonsError.message },
-        { status: 400 }
+        { status: 400 },
       );
     }
+
+    // Construct video_url for each lesson if aws_asset_key exists
+    const AWS_REGION = process.env.AWS_REGION;
+    const AWS_S3_BUCKET = process.env.AWS_S3_BUCKET;
+    const AWS_PROCESSED_FOLDER_VIDEO =
+      process.env.AWS_PROCESSED_FOLDER_VIDEO || "processed";
+
+    const lessonsWithVideoUrl = (lessons || []).map((lesson) => {
+      // Only construct video_url if aws_asset_key exists and lesson is a video
+      if (lesson.aws_asset_key) {
+        return {
+          ...lesson,
+          video_url: `https://${AWS_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/${AWS_PROCESSED_FOLDER_VIDEO}/${lesson.aws_asset_key}`,
+        };
+      }
+      return lesson;
+    });
 
     // Attach lessons to their respective sections
     const sectionsWithLessons = (sections || []).map((section) => ({
       ...section,
-      lessons: (lessons || []).filter(
-        (lesson) => lesson.section_id === section.id
+      lessons: (lessonsWithVideoUrl || []).filter(
+        (lesson) => lesson.section_id === section.id,
       ),
     }));
 
@@ -84,7 +101,7 @@ export async function GET(request: Request) {
           await supabase
             .from("users")
             .select(
-              "id, name, email, first_name, last_name, profile_picture_url, role, bio, organization_id"
+              "id, name, email, first_name, last_name, profile_picture_url, role, bio, organization_id",
             )
             .eq("id", course.instructor_id)
             .single();

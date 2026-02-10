@@ -160,6 +160,7 @@ CREATE TABLE public.lessons (
   order_index integer DEFAULT 1,
   description text,
   uploadUrl text,
+  aws_asset_key text,
   CONSTRAINT lessons_pkey PRIMARY KEY (id),
   CONSTRAINT lessons_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id),
   CONSTRAINT lessons_section_id_fkey FOREIGN KEY (section_id) REFERENCES public.course_sections(id)
