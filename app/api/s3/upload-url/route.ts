@@ -7,6 +7,7 @@ import {
   AllowedMimeType,
   UploadFileType,
 } from "@/lib/upload.types";
+import { createClient } from "@/lib/supabase/client"; // Add supabase client import
 
 // S3 folder constants for asset management
 const S3_VIDEO_FOLDER = process.env.AWS_VIDEO_FOLDER || "videos";
@@ -38,7 +39,7 @@ export async function POST(
   req: NextRequest,
 ): Promise<NextResponse<UploadResponse>> {
   const body = (await req.json()) as UploadRequestBody;
-  const { fileName, fileType, category } = body;
+  const { fileName, fileType, category, lessonId, courseId, userId } = body; // <-- add lessonId, courseId, userId
 
   if (!(category in ALLOWED_MIME_TYPES)) {
     return NextResponse.json({ message: "Unsupported category" } as any, {
@@ -55,8 +56,6 @@ export async function POST(
 
   // Convert fileName to snake_case for S3 key, but also keep original fileName in the key as requested
   const safeFileName = toSnakeCase(fileName);
-
-  // Use folder constants for S3 key
   const folder =
     category === "video"
       ? S3_VIDEO_FOLDER
@@ -70,8 +69,6 @@ export async function POST(
     Bucket: process.env.AWS_S3_BUCKET!,
     Key: key,
     ContentType: fileType,
-
-    // ✅ IMPORTANT PART
     ...(category === "image" && {
       ACL: "public-read",
     }),
@@ -81,12 +78,43 @@ export async function POST(
     expiresIn: 60,
   });
 
-  const publicUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`; // Return empty string for videos
+  const publicUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+
+  // --- Insert or upsert into aws_assets table ---
+  let aws_asset_id: string | null = null;
+  try {
+    const supabase = await createClient();
+    // Upsert by key (unique), so if already exists, update, else insert
+    const { data, error } = await supabase
+      .from("aws_assets")
+      .upsert([
+        {
+          asset_key: key,
+          file_name: keyWithoutFolder,
+          mime_type: fileType,
+          file_type: category,
+          bucket_name: process.env.AWS_S3_BUCKET!,
+          related_lesson_id: lessonId ?? null,
+          related_course_id: courseId ?? null,
+          uploaded_by: userId ?? null, 
+        },
+      ])
+      .select("id")
+      .single();
+    if (error) {
+      console.error("Failed to upsert aws_assets:", error);
+    } else {
+      aws_asset_id = data?.id ?? null;
+    }
+  } catch (err) {
+    console.error("Error inserting aws_assets:", err);
+  }
 
   return NextResponse.json({
     uploadUrl,
     publicUrl,
     category,
     aws_asset_key: keyWithoutFolder,
+    aws_asset_id,
   });
 }

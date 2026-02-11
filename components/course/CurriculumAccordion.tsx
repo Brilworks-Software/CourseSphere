@@ -3,6 +3,7 @@ import { Layers, Video, PlayCircle } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
+import { formatHMS } from "@/lib/utils";
 
 interface CurriculumAccordionProps {
   sections: any[];
@@ -74,7 +75,7 @@ export default function CurriculumAccordion({
                     <span className="truncate">{lesson.title}</span>
                     {lesson.duration ? (
                       <span className="ml-auto text-xs text-muted-foreground">
-                        {Math.floor(lesson.duration / 60)}:{String(lesson.duration % 60).padStart(2, "0")}
+                        {formatHMS(lesson.duration)}
                       </span>
                     ) : null}
                   </Button>

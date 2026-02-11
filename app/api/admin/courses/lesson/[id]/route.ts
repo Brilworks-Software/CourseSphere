@@ -10,13 +10,15 @@ export async function PATCH(
     const supabase = await createClient();
     const body = await request.json();
 
-    // Allow updating video_url, uploadUrl, aws_asset_key, and duration
+    // Allow updating video_url, uploadUrl, aws_asset_key, aws_asset_id, and duration
     const updateData: any = {};
     if (body.video_url !== undefined) updateData.video_url = body.video_url;
     if (body.duration !== undefined) updateData.duration = body.duration;
     if (body.uploadUrl !== undefined) updateData.uploadUrl = body.uploadUrl;
     if (body.aws_asset_key !== undefined)
       updateData.aws_asset_key = body.aws_asset_key;
+    if (body.aws_asset_id !== undefined)
+      updateData.aws_assets_data_id = body.aws_asset_id; // <-- Add this line
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(

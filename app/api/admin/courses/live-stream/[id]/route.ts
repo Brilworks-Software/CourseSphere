@@ -1,14 +1,18 @@
 import { createClient } from "@/lib/supabase/client";
 import { NextResponse } from "next/server";
 
-export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
+export async function GET(
+  request: Request,
+  context: { params: Promise<{ id: string }> },
+) {
   try {
     const { id } = await context.params;
     const supabase = await createClient();
 
     const { data, error } = await supabase
       .from("course_live_streams")
-      .select(`
+      .select(
+        `
         id,
         course_id,
         title,
@@ -40,7 +44,8 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
         ),
         created_at,
         updated_at
-      `)
+      `,
+      )
       .eq("id", id)
       .single();
 
@@ -49,8 +54,12 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     }
 
     // normalize single-element relation arrays
-    const thread = Array.isArray(data.discussion_thread) ? data.discussion_thread[0] : data.discussion_thread;
-    const announcement = Array.isArray(data.announcement) ? data.announcement[0] : data.announcement;
+    const thread = Array.isArray(data.discussion_thread)
+      ? data.discussion_thread[0]
+      : data.discussion_thread;
+    const announcement = Array.isArray(data.announcement)
+      ? data.announcement[0]
+      : data.announcement;
     const normalized = {
       ...data,
       discussion_thread: thread ?? null,
@@ -63,7 +72,10 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   }
 }
 
-export async function PUT(request: Request, context: { params: Promise<{ id: string }> }) {
+export async function PUT(
+  request: Request,
+  context: { params: Promise<{ id: string }> },
+) {
   try {
     const { id } = await context.params;
     const supabase = await createClient();
@@ -97,21 +109,32 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
       is_recording_available === undefined &&
       recording_lesson_id === undefined
     ) {
-      return NextResponse.json({ error: "No updatable fields provided." }, { status: 400 });
+      return NextResponse.json(
+        { error: "No updatable fields provided." },
+        { status: 400 },
+      );
     }
 
     const updatePayload: any = {};
     if (title !== undefined) updatePayload.title = title;
     if (description !== undefined) updatePayload.description = description;
-    if (youtube_video_id !== undefined) updatePayload.youtube_video_id = youtube_video_id;
-    if (youtube_video_url !== undefined) updatePayload.youtube_video_url = youtube_video_url;
-    if (scheduled_start_at !== undefined) updatePayload.scheduled_start_at = scheduled_start_at;
-    if (scheduled_end_at !== undefined) updatePayload.scheduled_end_at = scheduled_end_at;
+    if (youtube_video_id !== undefined)
+      updatePayload.youtube_video_id = youtube_video_id;
+    if (youtube_video_url !== undefined)
+      updatePayload.youtube_video_url = youtube_video_url;
+    if (scheduled_start_at !== undefined)
+      updatePayload.scheduled_start_at = scheduled_start_at;
+    if (scheduled_end_at !== undefined)
+      updatePayload.scheduled_end_at = scheduled_end_at;
     if (status !== undefined) updatePayload.status = status;
-    if (announcement_id !== undefined) updatePayload.announcement_id = announcement_id;
-    if (discussion_thread_id !== undefined) updatePayload.discussion_thread_id = discussion_thread_id;
-    if (is_recording_available !== undefined) updatePayload.is_recording_available = is_recording_available;
-    if (recording_lesson_id !== undefined) updatePayload.recording_lesson_id = recording_lesson_id;
+    if (announcement_id !== undefined)
+      updatePayload.announcement_id = announcement_id;
+    if (discussion_thread_id !== undefined)
+      updatePayload.discussion_thread_id = discussion_thread_id;
+    if (is_recording_available !== undefined)
+      updatePayload.is_recording_available = is_recording_available;
+    if (recording_lesson_id !== undefined)
+      updatePayload.recording_lesson_id = recording_lesson_id;
 
     const { data, error } = await supabase
       .from("course_live_streams")
@@ -129,7 +152,10 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
   }
 }
 
-export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  request: Request,
+  context: { params: Promise<{ id: string }> },
+) {
   try {
     const { id } = await context.params;
     const supabase = await createClient();

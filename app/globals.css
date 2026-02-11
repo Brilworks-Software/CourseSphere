@@ -88,7 +88,7 @@ body {
   --destructive: oklch(0.68 0.2 25);
   --destructive-foreground: oklch(1 0 0);
 
-  --border: oklch(1 0 0 / 10%);
+  --border: oklch(30.622% 0.00142 15.887 / 0.829);
   --input: oklch(15.434% 0.00002 271.152);
   --ring: oklch(0.7 0.15 200);
 

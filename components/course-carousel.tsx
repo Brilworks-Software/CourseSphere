@@ -38,7 +38,7 @@ export default function CourseCarousel({
         type="button"
         aria-label="Previous"
         onClick={() => scroll("left")}
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-background/80 backdrop-blur hover:bg-background"
+        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 border rounded-full bg-background/80 backdrop-blur hover:bg-background"
       >
         <ChevronLeft className="h-5 w-5 text-foreground" />
       </button>
@@ -67,7 +67,7 @@ export default function CourseCarousel({
         type="button"
         aria-label="Next"
         onClick={() => scroll("right")}
-        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-background/80 backdrop-blur hover:bg-background"
+        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full border bg-background/80 backdrop-blur hover:bg-background"
       >
         <ChevronRight className="h-5 w-5 text-foreground" />
       </button>

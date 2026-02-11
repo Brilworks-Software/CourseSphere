@@ -109,9 +109,9 @@ export function CourseCard({
             {price}
           </span>
         </div>
-        <div className="text-xs text-muted-foreground line-clamp-2 mb-2 min-h-8 max-h-8 overflow-hidden">
+        {/* <div className="text-xs text-muted-foreground line-clamp-2 mb-2 min-h-8 max-h-8 overflow-hidden">
           {desc}
-        </div>
+        </div> */}
         <div className="flex flex-wrap gap-2 mb-2 min-h-7">
           {category && (
             <Badge variant="secondary" className="flex items-center gap-1">

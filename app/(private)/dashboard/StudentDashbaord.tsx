@@ -4,7 +4,7 @@ import StudentLiveList from "@/components/StudentLiveList";
 
 export default function StudentDashboard() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 ">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <div>
@@ -18,6 +18,7 @@ export default function StudentDashboard() {
 
       {/* Enrolled Courses (removed outer card; use admin-style articles) */}
       <div>
+        <StudentLiveList />
         <div className="py-5 flex justify-between items-center">
           <h2 className="text-lg font-semibold text-foreground">
             My Enrolled Courses
@@ -27,7 +28,6 @@ export default function StudentDashboard() {
           </Link>
         </div>
 
-        <StudentLiveList />
         <EnrolledCoursesClient />
       </div>
     </div>

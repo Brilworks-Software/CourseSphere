@@ -72,3 +72,49 @@ export const EDITOR_TOOLBAR =
 export const EDITOR_PLUGIN = ["wordcount", "lists", "link", "table"];
 
 export const EDITOR_MENUBAR = "edit insert format table";
+
+// helpers
+export function totalSecondsFromCourse(course: any) {
+  try {
+    const lessons = course?.lessons ?? [];
+    if (!lessons.length) return 0;
+
+    // Sum raw durations (unknown unit)
+    const sumRaw = lessons.reduce((sum: number, l: any) => sum + (Number(l.duration) || 0), 0);
+    const avgRaw = sumRaw / lessons.length;
+
+    // Heuristic:
+    // - If average raw duration > 10 -> likely durations are in seconds (e.g. 60, 120).
+    // - Otherwise treat raw as minutes.
+    const likelySeconds = avgRaw > 10;
+
+    if (likelySeconds) {
+      // durations are seconds already
+      return Math.round(sumRaw);
+    } else {
+      // durations provided as minutes -> convert to seconds
+      return Math.round(sumRaw * 60);
+    }
+  } catch (e) {
+    return 0;
+  }
+}
+
+export function formatHMS(totalSeconds: number) {
+  if (totalSeconds === null || totalSeconds === undefined) return "—";
+  if (totalSeconds <= 0) return "0s";
+
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+
+  // Build a compact label depending on available units
+  if (h > 0) {
+    // include seconds only if no minutes (rare) or you want finer detail; keep h and m
+    return s ? `${h}h ${m}m ${s}s` : `${h}h ${m}m`;
+  }
+  if (m > 0) {
+    return s ? `${m}m ${s}s` : `${m}m`;
+  }
+  return `${s}s`;
+}
