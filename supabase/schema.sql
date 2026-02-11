@@ -1,6 +1,23 @@
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
 
+CREATE TABLE public.aws_assets (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  bucket_name text NOT NULL,
+  asset_key text NOT NULL,
+  file_name text NOT NULL,
+  file_type text NOT NULL,
+  category text NOT NULL,
+  size bigint,
+  uploaded_by uuid,
+  related_lesson_id uuid,
+  related_course_id uuid,
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT aws_assets_pkey PRIMARY KEY (id),
+  CONSTRAINT aws_assets_lesson_fkey FOREIGN KEY (related_lesson_id) REFERENCES public.lessons(id),
+  CONSTRAINT aws_assets_course_fkey FOREIGN KEY (related_course_id) REFERENCES public.courses(id),
+  CONSTRAINT aws_assets_uploaded_by_fkey FOREIGN KEY (uploaded_by) REFERENCES public.users(id)
+);
 CREATE TABLE public.course_announcements (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   course_id uuid NOT NULL,
@@ -161,9 +178,11 @@ CREATE TABLE public.lessons (
   description text,
   uploadUrl text,
   aws_asset_key text,
+  aws_assets_data_id uuid,
   CONSTRAINT lessons_pkey PRIMARY KEY (id),
   CONSTRAINT lessons_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id),
-  CONSTRAINT lessons_section_id_fkey FOREIGN KEY (section_id) REFERENCES public.course_sections(id)
+  CONSTRAINT lessons_section_id_fkey FOREIGN KEY (section_id) REFERENCES public.course_sections(id),
+  CONSTRAINT lessons_aws_assets_data_id_fkey FOREIGN KEY (aws_assets_data_id) REFERENCES public.aws_assets(id)
 );
 CREATE TABLE public.organizations (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),

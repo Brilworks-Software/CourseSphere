@@ -23,33 +23,53 @@ export function ManageCourseForm({ course }: { course: Course }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Billing type for PricingStep
-  const [billingType, setBillingType] = useState<string>((course as any).billing_type ?? "one_time");
+  const [billingType, setBillingType] = useState<string>(
+    (course as any).billing_type ?? "one_time",
+  );
 
   // Category details
-  const [primaryCategory, setPrimaryCategory] = useState<string>((course as any).primary_category ?? "");
-  const [subCategory, setSubCategory] = useState<string>((course as any).sub_category ?? "");
+  const [primaryCategory, setPrimaryCategory] = useState<string>(
+    (course as any).primary_category ?? "",
+  );
+  const [subCategory, setSubCategory] = useState<string>(
+    (course as any).sub_category ?? "",
+  );
 
   // Image fields
-  const [thumbnailUrl, setThumbnailUrl] = useState<string>((course as any).thumbnail_url ?? "");
+  const [thumbnailUrl, setThumbnailUrl] = useState<string>(
+    (course as any).thumbnail_url ?? "",
+  );
 
   // is_free and price
   const [isFree, setIsFree] = useState((course as any).is_free ?? true);
-  const [price, setPrice] = useState((course as any).price ? String((course as any).price) : "");
+  const [price, setPrice] = useState(
+    (course as any).price ? String((course as any).price) : "",
+  );
 
   // Razorpay
-  const [isRazorpayConnected, setIsRazorpayConnected] = useState<boolean>((course as any).razorpay_connected ?? false);
-  const [razorpayKey, setRazorpayKey] = useState<string>((course as any).razorpay_key ?? "");
+  const [isRazorpayConnected, setIsRazorpayConnected] = useState<boolean>(
+    (course as any).razorpay_connected ?? false,
+  );
+  const [razorpayKey, setRazorpayKey] = useState<string>(
+    (course as any).razorpay_key ?? "",
+  );
 
   // Add requirements and expectations fields
-  const [requirements, setRequirements] = useState((course as any).requirements ?? "");
-  const [expectations, setExpectations] = useState((course as any).expectations ?? "");
+  const [requirements, setRequirements] = useState(
+    (course as any).requirements ?? "",
+  );
+  const [expectations, setExpectations] = useState(
+    (course as any).expectations ?? "",
+  );
 
   // Stepper state: 0=Basic,1=Category,2=Pricing,3=Review
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const stepParam = searchParams?.get("step");
-  const [step, setStep] = useState<number>(stepParam ? parseInt(stepParam, 10) : 0);
+  const [step, setStep] = useState<number>(
+    stepParam ? parseInt(stepParam, 10) : 0,
+  );
 
   // Refs for autofocus/select behavior
   const titleRef = useRef<HTMLInputElement>(null);
@@ -92,71 +112,104 @@ export function ManageCourseForm({ course }: { course: Course }) {
     if (step === 0) {
       if (titleRef.current) {
         titleRef.current.focus();
-        try { titleRef.current.select(); } catch {}
+        try {
+          titleRef.current.select();
+        } catch {}
       }
     } else if (step === 1) {
-      try { primarySelectRef.current?.focus(); } catch {}
+      try {
+        primarySelectRef.current?.focus();
+      } catch {}
     } else if (step === 2) {
       if (priceRef.current) {
         priceRef.current.focus();
-        try { priceRef.current.select(); } catch {}
+        try {
+          priceRef.current.select();
+        } catch {}
       }
     }
   }, [step]);
 
+  // Stepper Navigation Component
+  function StepperNav({
+    step,
+    setStep,
+  }: {
+    step: number;
+    setStep: (i: number) => void;
+  }) {
+    return (
+      <nav aria-label="Order Steps">
+        <ol className="flex md:flex-col gap-1 md:space-y-1 w-full overflow-x-auto md:overflow-visible">
+          {stepTitles.map((title, i) => (
+            <li key={i} className="flex-1 min-w-[120px]">
+              <button
+                type="button"
+                className={`
+                  group flex items-center w-full px-3 py-2 rounded-lg transition
+                  text-left
+                  ${
+                    step === i
+                      ? "bg-primary/10 text-primary font-semibold shadow-sm"
+                      : "hover:bg-muted text-muted-foreground"
+                  }
+                  ${step > i ? "opacity-80" : ""}
+                  ${step === i ? "border-b-2 md:border-b-0 border-primary" : ""}
+                `}
+                aria-current={step === i ? "step" : undefined}
+                onClick={() => setStep(i)}
+              >
+                <span className="flex-1 truncate">{title}</span>
+                {step === i && (
+                  <span className="ml-2 text-muted-foreground md:block hidden">
+                    &rsaquo;
+                  </span>
+                )}
+              </button>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    );
+  }
+
   return (
-    <div className="h-full flex flex-col bg-background">
-      <main className="flex-1 flex">
-        {/* Sidebar Stepper */}
-        <aside className="hidden md:block w-64 bg-background border-r border-border px-6 min-h-[80vh] sticky top-0">
+    <div className="h-full flex flex-col">
+      {/* Mobile Stepper Header */}
+      <div className="md:hidden w-full px-2 pt-2 pb-1 bg-background sticky top-0 z-20 border-b">
+        <div className="flex items-center gap-2 mb-2">
+          <Link href={`/courses/${course.id}?ow=1`}>
+            <Button variant="ghost" size="sm">
+              <ChevronLeft className="w-4 h-4" /> Back
+            </Button>
+          </Link>
+          <span className="font-semibold text-base">{stepTitles[step]}</span>
+        </div>
+        <StepperNav step={step} setStep={setStep} />
+      </div>
+      <main className="flex-1 flex h-full relative overflow-x-auto">
+        {/* Sidebar Stepper (Desktop) */}
+        <div className="hidden md:block w-64 h-auto px-6 sticky top-0">
           <div className="mb-6 flex items-center gap-4">
             <Link href={`/courses/${course.id}?ow=1`}>
-              <Button variant="ghost"><ChevronLeft /> Back</Button>
+              <Button variant="ghost">
+                <ChevronLeft /> Back
+              </Button>
             </Link>
           </div>
-          <div>
-            <nav aria-label="Order Steps">
-              <ol className="space-y-1">
-                {stepTitles.map((title, i) => (
-                  <li key={i}>
-                    <button
-                      type="button"
-                      className={`
-                        group flex items-center w-full px-3 py-2 rounded-lg transition
-                        text-left
-                        ${
-                          step === i
-                            ? "bg-primary/10 text-primary font-semibold shadow-sm"
-                            : "hover:bg-muted text-muted-foreground"
-                        }
-                        ${step > i ? "opacity-80" : ""}
-                      `}
-                      aria-current={step === i ? "step" : undefined}
-                      onClick={() => { setStep(i); }}
-                    >
-                      <span className="flex-1 truncate">{title}</span>
-                      {step === i && (
-                        <span className="ml-2 text-muted-foreground">
-                          &rsaquo;
-                        </span>
-                      )}
-                    </button>
-                  </li>
-                ))}
-              </ol>
-            </nav>
-          </div>
-        </aside>
-
+          <StepperNav step={step} setStep={setStep} />
+        </div>
         {/* Main Content */}
-        <section className="flex-1 flex flex-col items-center overflow-auto">
+        <section className="flex-1 flex flex-col items-center h-full overflow-y-auto">
           <div className="w-full max-w-225 p-6">
-            {/* Header */}
-            <div className="mb-6">
+            {/* Header (hide on mobile, show on desktop) */}
+            <div className="mb-6 hidden md:block">
               <h2 className="text-lg font-semibold">{stepTitles[step]}</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                {step === 0 && "Edit title, description and thumbnail for your course."}
-                {step === 1 && "Edit the primary category and sub-category for your course."}
+                {step === 0 &&
+                  "Edit title, description and thumbnail for your course."}
+                {step === 1 &&
+                  "Edit the primary category and sub-category for your course."}
               </p>
             </div>
 
@@ -217,11 +270,12 @@ export function ManageCourseForm({ course }: { course: Course }) {
                   priceRef={priceRef}
                 />
               )}
-              {step === 2 && (
-                <CurriculumStep courseId={course.id} />
-              )}
+              {step === 2 && <CurriculumStep courseId={course.id} />}
               {step === 3 && (
-                <LiveStreamStep courseId={course.id} instructorId={(course as any).instructor_id || ""} />
+                <LiveStreamStep
+                  courseId={course.id}
+                  instructorId={(course as any).instructor_id || ""}
+                />
               )}
               {step === 4 && (
                 <DetailsCourseStep
@@ -234,15 +288,16 @@ export function ManageCourseForm({ course }: { course: Course }) {
               )}
               {step === 5 && (
                 <>
-                  <AnnouncementStep courseId={course.id} instructorId={(course as any).instructor_id || ""} />
+                  <AnnouncementStep
+                    courseId={course.id}
+                    instructorId={(course as any).instructor_id || ""}
+                  />
                 </>
               )}
             </div>
           </div>
         </section>
       </main>
-
-      {/* Footer removed — each step has its own save controls now */}
     </div>
   );
 }

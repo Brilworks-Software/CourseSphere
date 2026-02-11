@@ -15,20 +15,33 @@ interface MediaUploaderProps {
     url: string,
     uploadUrl?: string,
     aws_asset_key?: string,
+    duration?: number, // duration in seconds
+    aws_asset_id?: string, // <-- Add this param
   ) => void;
+  lessonId?: string; // <-- Add lessonId
+  courseId?: string; // <-- Add courseId
+  userId?: string; // <-- Add userId
 }
 
 // Dedicated VideoUploader component
 function VideoUploader({
   label,
   onUploaded,
+  lessonId,
+  courseId,
+  userId,
 }: {
   label?: string;
   onUploaded?: (
     url: string,
     uploadUrl?: string,
     aws_asset_key?: string,
+    duration?: number,
+    aws_asset_id?: string,
   ) => void;
+  lessonId?: string;
+  courseId?: string;
+  userId?: string;
 }) {
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -36,17 +49,29 @@ function VideoUploader({
   const [progress, setProgress] = useState(0);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [duration, setDuration] = useState<number | undefined>(undefined);
 
   const inputRef = useRef<HTMLInputElement>(null);
-
+  console.log("duration", duration);
   const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     setError(null);
     setSuccess(false);
     setProgress(0);
+    setDuration(undefined);
     if (file) {
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
+      // Extract duration using a temporary video element
+      const tempVideo = document.createElement("video");
+      tempVideo.preload = "metadata";
+      tempVideo.onloadedmetadata = function () {
+        window.URL.revokeObjectURL(tempVideo.src);
+        setDuration(
+          tempVideo.duration ? Math.floor(tempVideo.duration) : undefined,
+        );
+      };
+      tempVideo.src = URL.createObjectURL(file);
     }
   };
 
@@ -64,6 +89,9 @@ function VideoUploader({
           fileName: selectedFile.name,
           fileType: selectedFile.type,
           category: "video",
+          lessonId, // <-- pass lessonId
+          courseId, // <-- pass courseId
+          userId, // <-- pass userId
         }),
       });
 
@@ -78,7 +106,7 @@ function VideoUploader({
       // Use XMLHttpRequest for progress
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open("PUT", data.uploadUrl);
+        xhr.open("PUT", data.uploadUrl || "");
         xhr.setRequestHeader("Content-Type", selectedFile.type);
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable) {
@@ -100,13 +128,19 @@ function VideoUploader({
         xhr.send(selectedFile);
       });
 
-      setPreviewUrl(data.publicUrl);
+      setPreviewUrl(data.publicUrl || "");
       setSuccess(true);
       setError(null);
       setUploading(false);
       setProgress(100);
-      // Pass aws_asset_key as third argument
-      onUploaded?.(data.publicUrl, data.uploadUrl, data.aws_asset_key);
+      // Pass aws_asset_key and duration as arguments
+      onUploaded?.(
+        data.publicUrl || "",
+        data.uploadUrl || "",
+        data.aws_asset_key,
+        duration,
+        data.aws_asset_id || "", // <-- Pass asset id
+      );
     } catch (err: any) {
       setError(err.message || "Failed to upload to S3.");
       setUploading(false);
@@ -226,6 +260,9 @@ export default function MediaUploader({
   type,
   label,
   onUploaded,
+  lessonId,
+  courseId,
+  userId,
 }: MediaUploaderProps): React.JSX.Element {
   // Only use custom logic for video
   if (type === "image") {
@@ -240,11 +277,19 @@ export default function MediaUploader({
         maxSizeMB={5}
         showPreview={true}
         aspectRatio="landscape"
-        className="max-w-md"
+        className="max-w-7xl"
       />
     );
   }
 
   // Dedicated UI for video
-  return <VideoUploader label={label} onUploaded={onUploaded} />;
+  return (
+    <VideoUploader
+      label={label}
+      onUploaded={onUploaded}
+      lessonId={lessonId}
+      courseId={courseId}
+      userId={userId}
+    />
+  );
 }

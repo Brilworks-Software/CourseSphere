@@ -9,11 +9,15 @@ export interface UploadRequestBody {
   fileName: string;
   fileType: AllowedMimeType;
   category: UploadFileType;
+  lessonId?: string;
+  courseId?: string;
+  userId?: string;
 }
 
 export interface UploadResponse {
-  uploadUrl: string;
-  publicUrl: string;
-  category: UploadFileType;
-  aws_asset_key: string;
+  uploadUrl?: string;
+  publicUrl?: string;
+  category?: UploadFileType;
+  aws_asset_key?: string;
+  aws_asset_id?: string | null; // <-- Allow null as well as string/undefined
 }

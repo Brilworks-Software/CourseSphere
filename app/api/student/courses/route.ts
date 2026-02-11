@@ -66,7 +66,15 @@ export async function GET(request: Request) {
     const AWS_PROCESSED_FOLDER_VIDEO =
       process.env.AWS_PROCESSED_FOLDER_VIDEO || "processed";
 
-    const lessonsWithVideoUrl = (lessons || []).map((lesson) => {
+    // Ensure lessons are sorted by order_index (if exists)
+    const lessonsSorted = (lessons || []).sort((a, b) => {
+      if (a.order_index !== undefined && b.order_index !== undefined) {
+        return a.order_index - b.order_index;
+      }
+      return 0;
+    });
+
+    const lessonsWithVideoUrl = lessonsSorted.map((lesson) => {
       // Only construct video_url if aws_asset_key exists and lesson is a video
       if (lesson.aws_asset_key) {
         return {
@@ -77,13 +85,22 @@ export async function GET(request: Request) {
       return lesson;
     });
 
-    // Attach lessons to their respective sections
-    const sectionsWithLessons = (sections || []).map((section) => ({
-      ...section,
-      lessons: (lessonsWithVideoUrl || []).filter(
-        (lesson) => lesson.section_id === section.id,
-      ),
-    }));
+    // Attach lessons to their respective sections, ensuring correct order
+    const sectionsWithLessons = (sections || []).map((section) => {
+      // Filter lessons for this section and sort by order_index
+      const sectionLessons = (lessonsWithVideoUrl || [])
+        .filter((lesson) => lesson.section_id === section.id)
+        .sort((a, b) => {
+          if (a.order_index !== undefined && b.order_index !== undefined) {
+            return a.order_index - b.order_index;
+          }
+          return 0;
+        });
+      return {
+        ...section,
+        lessons: sectionLessons,
+      };
+    });
 
     // Fetch enrollment
     const { data: enrollment } = await supabase
@@ -101,18 +118,26 @@ export async function GET(request: Request) {
           await supabase
             .from("users")
             .select(
-              "id, name, email, first_name, last_name, profile_picture_url, role, bio, organization_id",
+              "id, email, first_name, last_name, profile_picture_url, role, bio, organization_id",
             )
             .eq("id", course.instructor_id)
             .single();
 
-        const { data: instructorProfile } = await supabase
-          .from("profiles")
-          .select("avatar_url, institute_name, website")
-          .eq("id", course.instructor_id)
-          .single();
+        if (!instructorUser || instructorUserError) {
+          // Keep instructor as null if user row not found or any error occurred
+          instructor = null;
+        } else {
+          // Fetch profile safely — select returns an array if not using .single()
+          const { data: instructorProfiles, error: instructorProfileError } =
+            await supabase
+              .from("profiles")
+              .select("avatar_url, institute_name, website")
+              .eq("id", course.instructor_id);
 
-        if (!instructorUserError && instructorUser) {
+          const instructorProfile = Array.isArray(instructorProfiles)
+            ? instructorProfiles[0] || null
+            : instructorProfiles || null;
+
           instructor = {
             ...instructorUser,
             profile: instructorProfile || null,

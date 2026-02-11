@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { UploadCloud, CheckCircle2, XCircle, RefreshCcw } from "lucide-react";
 import MediaUploader from "@/components/MediaUploader";
+import { useUserContext } from "@/app/provider/user-context"; // <-- use user-context instead of AuthProvider
 
 interface CurriculumStepProps {
   courseId: string;
@@ -54,6 +55,7 @@ interface Lesson {
 }
 
 export function CurriculumStep({ courseId }: CurriculumStepProps) {
+  const { user } = useUserContext(); // <-- use user from user-context
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(false);
   const [showSectionDialog, setShowSectionDialog] = useState(false);
@@ -219,7 +221,7 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
     setError(null);
     try {
       const res = await fetch(
-        `/api/admin/courses/sections/lessons/${lessonId}`,
+        `/api/admin/courses/lessons/${lessonId}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -271,6 +273,115 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
     }));
   };
 
+  // Handler for section edit dropdown
+  function handleSectionEditDropdown(section: Section) {
+    setEditingSectionId(section.id);
+    setSectionTitleEdit(section.title);
+  }
+
+  // Handler for section delete dropdown
+  function handleSectionDeleteDropdown(sectionId: string) {
+    handleDeleteSection(sectionId);
+  }
+
+  // Handler for lesson edit dropdown
+  function handleLessonEditDropdown(lesson: Lesson) {
+    setEditingLessonId(lesson.id);
+    setLessonTitleEdit(lesson.title);
+  }
+
+  // Handler for lesson delete dropdown
+  function handleLessonDeleteDropdown(sectionId: string, lessonId: string) {
+    handleDeleteLesson(sectionId, lessonId);
+  }
+
+  // Handler for video delete button
+  async function handleDeleteVideo(lessonId: string) {
+    setVideoUploadState((prev) => ({
+      ...prev,
+      [lessonId]: {
+        ...prev[lessonId],
+        uploading: true,
+        error: null,
+        success: false,
+      },
+    }));
+    try {
+      const response = await fetch(
+        `/api/admin/courses/lesson/${lessonId}/video`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to delete video");
+      }
+      setVideoUploadState((prev) => ({
+        ...prev,
+        [lessonId]: {
+          ...prev[lessonId],
+          uploading: false,
+          error: null,
+          success: true,
+        },
+      }));
+      await fetchSections();
+    } catch (err: any) {
+      setVideoUploadState((prev) => ({
+        ...prev,
+        [lessonId]: {
+          ...prev[lessonId],
+          uploading: false,
+          error: err.message,
+        },
+      }));
+    }
+  }
+
+  // Handler for video upload button
+  function handleUploadVideoButton(lessonId: string) {
+    toggleVideoUpload(lessonId, !videoUploadState[lessonId]?.show);
+  }
+
+  // Handler for add lesson button
+  function handleAddLessonButton(sectionId: string) {
+    setShowLessonDialog(sectionId);
+  }
+
+  // Handler for cancel lesson dialog
+  function handleCancelLessonDialog() {
+    setShowLessonDialog(null);
+  }
+
+  // Handler for add section button
+  function handleAddSectionButton() {
+    setShowSectionDialog(true);
+  }
+
+  // Handler for cancel section dialog
+  function handleCancelSectionDialog() {
+    setShowSectionDialog(false);
+  }
+
+  // Handler for cancel editing section
+  function handleCancelEditingSection() {
+    setEditingSectionId(null);
+  }
+
+  // Handler for cancel editing lesson
+  function handleCancelEditingLesson() {
+    setEditingLessonId(null);
+  }
+
+  // Handler for cancel video upload
+  function handleCancelVideoUpload(lessonId: string) {
+    toggleVideoUpload(lessonId, false);
+  }
+
   return (
     <div className="space-y-6">
       {error && <div className="text-destructive">{error}</div>}
@@ -307,6 +418,7 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
             collapsible
             value={expandedSection ?? undefined}
             onValueChange={setExpandedSection}
+            className="border rounded-lg"
           >
             {sections.map((section) => {
               const isOpen = expandedSection === section.id;
@@ -314,49 +426,53 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
                 <AccordionItem
                   key={section.id}
                   value={section.id}
-                  className={`mb-3  rounded-lg overflow-hidden`}
+                  className={`mb-3 rounded-none p-0 overflow-hidden`}
                 >
                   <div
                     className={`flex items-center justify-between w-full px-4 py-3 transition-all `}
                   >
-                    <AccordionTrigger
-                      className={`flex-1 min-w-0 py-0 w-full  hover:no-underline`}
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Layers className="w-5 h-5 text-primary" />
-                        <span className="font-semibold text-lg truncate">
-                          {section.title}
-                        </span>
-                        {section.description && (
-                          <span className="ml-2 text-xs text-muted-foreground italic truncate">
-                            {section.description}
+                    <div className="flex-1 max-w-[96%] w-full">
+                      <AccordionTrigger
+                        className={`flex-1 min-w-0 py-0  hover:no-underline`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0 ">
+                          <Layers className="w-5 h-5 min-w-6 text-primary" />
+                          <span className="font-semibold text-lg truncate">
+                            {section.title}
                           </span>
-                        )}
-                      </div>
-                    </AccordionTrigger>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button size="icon" variant="ghost">
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setEditingSectionId(section.id);
-                            setSectionTitleEdit(section.title);
-                          }}
-                        >
-                          <Pencil className="w-4 h-4 mr-2" /> Edit Section Title
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDeleteSection(section.id)}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" /> Delete Section
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          {section.description && (
+                            <span className="ml-2 text-xs text-muted-foreground italic truncate">
+                              {section.description}
+                            </span>
+                          )}
+                        </div>
+                      </AccordionTrigger>
+                    </div>
+                    <div className="min-w-5">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="icon" variant="ghost">
+                            <MoreVertical className="w-4 h-4 min-w-6" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem
+                            onClick={() => handleSectionEditDropdown(section)}
+                          >
+                            <Pencil className="w-4 h-4 mr-2" /> Edit Section
+                            Title
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleSectionDeleteDropdown(section.id)
+                            }
+                            className="text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" /> Delete Section
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                   <AccordionContent>
                     {/* Edit section title inline */}
@@ -382,7 +498,7 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
                           type="button"
                           size="sm"
                           variant="outline"
-                          onClick={() => setEditingSectionId(null)}
+                          onClick={handleCancelEditingSection}
                         >
                           Cancel
                         </Button>
@@ -404,30 +520,31 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
                                 {lesson.title}
                               </span>
                             </div>
-                            {/* Video Upload/Change Button OUTSIDE More menu */}
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="mr-2 flex items-center gap-1"
-                              onClick={() =>
-                                toggleVideoUpload(
-                                  lesson.id,
-                                  !videoUploadState[lesson.id]?.show,
-                                )
-                              }
-                            >
-                              {lesson.video_url ? (
-                                <>
-                                  <RefreshCcw className="w-4 h-4" /> Change
-                                  Video
-                                </>
-                              ) : (
-                                <>
-                                  <UploadCloud className="w-4 h-4" /> Upload
-                                  Video
-                                </>
-                              )}
-                            </Button>
+                            {/* Video Upload/Delete Button OUTSIDE More menu */}
+                            {lesson.video_url ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="mr-2 flex items-center gap-1"
+                                onClick={() => handleDeleteVideo(lesson.id)}
+                                disabled={
+                                  videoUploadState[lesson.id]?.uploading
+                                }
+                              >
+                                <Trash2 className="w-4 h-4" /> Delete Video
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="mr-2 flex items-center gap-1"
+                                onClick={() =>
+                                  handleUploadVideoButton(lesson.id)
+                                }
+                              >
+                                <UploadCloud className="w-4 h-4" /> Upload Video
+                              </Button>
+                            )}
                             {/* More menu for Edit/Delete */}
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -437,17 +554,19 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent>
                                 <DropdownMenuItem
-                                  onClick={() => {
-                                    setEditingLessonId(lesson.id);
-                                    setLessonTitleEdit(lesson.title);
-                                  }}
+                                  onClick={() =>
+                                    handleLessonEditDropdown(lesson)
+                                  }
                                 >
                                   <Pencil className="w-4 h-4 mr-2" /> Edit
                                   Lesson Title
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() =>
-                                    handleDeleteLesson(section.id, lesson.id)
+                                    handleLessonDeleteDropdown(
+                                      section.id,
+                                      lesson.id,
+                                    )
                                   }
                                   className="text-destructive"
                                 >
@@ -481,112 +600,122 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
                                 type="button"
                                 size="sm"
                                 variant="outline"
-                                onClick={() => setEditingLessonId(null)}
+                                onClick={handleCancelEditingLesson}
                               >
                                 Cancel
                               </Button>
                             </form>
                           )}
                           {/* Video upload UI for this lesson */}
-                          {videoUploadState[lesson.id]?.show && (
-                            <div className="mt-3 border rounded-lg p-4 bg-muted">
-                              <MediaUploader
-                                type="video"
-                                label="Upload Lesson Video"
-                                onUploaded={async (
-                                  publicUrl: string,
-                                  uploadUrl?: string,
-                                  aws_asset_key?: string, // Accept aws_asset_key
-                                ) => {
-                                  // Save both publicUrl, uploadUrl, aws_asset_key to lesson
-                                  setVideoUploadState((prev) => ({
-                                    ...prev,
-                                    [lesson.id]: {
-                                      ...prev[lesson.id],
-                                      uploading: true,
-                                      error: null,
-                                      success: false,
-                                    },
-                                  }));
-                                  try {
-                                    const response = await fetch(
-                                      `/api/admin/courses/lesson/${lesson.id}`,
-                                      {
-                                        method: "PATCH",
-                                        headers: {
-                                          "Content-Type": "application/json",
-                                        },
-                                        body: JSON.stringify({
-                                          video_url: publicUrl,
-                                          uploadUrl: uploadUrl || null,
-                                          aws_asset_key: aws_asset_key || null,
-                                        }),
-                                      },
-                                    );
-                                    if (!response.ok) {
-                                      const data = await response.json();
-                                      throw new Error(
-                                        data.error || "Failed to update lesson",
-                                      );
-                                    }
+                          {videoUploadState[lesson.id]?.show &&
+                            !lesson.video_url && (
+                              <div className="mt-3 border rounded-lg p-4 bg-muted">
+                                <MediaUploader
+                                  type="video"
+                                  label="Upload Lesson Video"
+                                  lessonId={lesson.id}
+                                  courseId={courseId}
+                                  userId={user?.id}
+                                  onUploaded={async (
+                                    publicUrl: string,
+                                    uploadUrl?: string,
+                                    aws_asset_key?: string,
+                                    duration?: number,
+                                    aws_asset_id?: string,
+                                  ) => {
+                                    // Save both publicUrl, uploadUrl, aws_asset_key, aws_asset_id, and duration to lesson
                                     setVideoUploadState((prev) => ({
                                       ...prev,
                                       [lesson.id]: {
                                         ...prev[lesson.id],
-                                        uploading: false,
+                                        uploading: true,
                                         error: null,
-                                        success: true,
+                                        success: false,
                                       },
                                     }));
-                                    await fetchSections();
-                                  } catch (err: any) {
-                                    setVideoUploadState((prev) => ({
-                                      ...prev,
-                                      [lesson.id]: {
-                                        ...prev[lesson.id],
-                                        uploading: false,
-                                        error: err.message,
-                                      },
-                                    }));
+                                    try {
+                                      const response = await fetch(
+                                        `/api/admin/courses/lesson/${lesson.id}`,
+                                        {
+                                          method: "PATCH",
+                                          headers: {
+                                            "Content-Type": "application/json",
+                                          },
+                                          body: JSON.stringify({
+                                            video_url: publicUrl,
+                                            uploadUrl: uploadUrl || null,
+                                            aws_asset_key:
+                                              aws_asset_key || null,
+                                            aws_asset_id: aws_asset_id || null, // <-- Send asset id
+                                            duration: duration ?? null, // Pass duration to backend
+                                          }),
+                                        },
+                                      );
+                                      if (!response.ok) {
+                                        const data = await response.json();
+                                        throw new Error(
+                                          data.error ||
+                                            "Failed to update lesson",
+                                        );
+                                      }
+                                      setVideoUploadState((prev) => ({
+                                        ...prev,
+                                        [lesson.id]: {
+                                          ...prev[lesson.id],
+                                          uploading: false,
+                                          error: null,
+                                          success: true,
+                                        },
+                                      }));
+                                      await fetchSections();
+                                    } catch (err: any) {
+                                      setVideoUploadState((prev) => ({
+                                        ...prev,
+                                        [lesson.id]: {
+                                          ...prev[lesson.id],
+                                          uploading: false,
+                                          error: err.message,
+                                        },
+                                      }));
+                                    }
+                                  }}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() =>
+                                    handleCancelVideoUpload(lesson.id)
                                   }
-                                }}
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() =>
-                                  toggleVideoUpload(lesson.id, false)
-                                }
-                                disabled={
-                                  videoUploadState[lesson.id]?.uploading
-                                }
-                                className="mt-2"
-                              >
-                                Cancel
-                              </Button>
-                              {videoUploadState[lesson.id]?.uploading && (
-                                <div className="mt-2 text-xs text-muted-foreground text-center">
-                                  Uploading...
+                                  disabled={
+                                    videoUploadState[lesson.id]?.uploading
+                                  }
+                                  className="mt-2"
+                                >
+                                  Cancel
+                                </Button>
+                                {videoUploadState[lesson.id]?.uploading && (
+                                  <div className="mt-2 text-xs text-muted-foreground text-center">
+                                    Uploading...
+                                  </div>
+                                )}
+                                {videoUploadState[lesson.id]?.error && (
+                                  <div className="mt-2 flex items-center gap-2 text-destructive text-sm">
+                                    <XCircle className="w-5 h-5" />
+                                    {videoUploadState[lesson.id]?.error}
+                                  </div>
+                                )}
+                                {videoUploadState[lesson.id]?.success && (
+                                  <div className="mt-2 flex items-center gap-2 text-success text-sm">
+                                    <CheckCircle2 className="w-5 h-5 text-primary" />
+                                    Video uploaded and lesson updated!
+                                  </div>
+                                )}
+                                <div className="text-xs text-muted-foreground mt-2">
+                                  Note: All files should be at least 720p and
+                                  less than 4.0 GB.
                                 </div>
-                              )}
-                              {videoUploadState[lesson.id]?.error && (
-                                <div className="mt-2 flex items-center gap-2 text-destructive text-sm">
-                                  <XCircle className="w-5 h-5" />
-                                  {videoUploadState[lesson.id]?.error}
-                                </div>
-                              )}
-                              {videoUploadState[lesson.id]?.success && (
-                                <div className="mt-2 flex items-center gap-2 text-success text-sm">
-                                  <CheckCircle2 className="w-5 h-5 text-primary" />
-                                  Video uploaded and lesson updated!
-                                </div>
-                              )}
-                              <div className="text-xs text-muted-foreground mt-2">
-                                Note: All files should be at least 720p and less
-                                than 4.0 GB.
                               </div>
-                            </div>
-                          )}
+                            )}
                         </div>
                       ))}
                       {/* Add Lesson Button */}
@@ -608,7 +737,7 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
                           <Button
                             type="button"
                             variant="outline"
-                            onClick={() => setShowLessonDialog(null)}
+                            onClick={handleCancelLessonDialog}
                           >
                             Cancel
                           </Button>
@@ -618,7 +747,7 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
                           // variant="secondary"
                           size="sm"
                           className="mt-2 w-full flex items-center gap-2"
-                          onClick={() => setShowLessonDialog(section.id)}
+                          onClick={() => handleAddLessonButton(section.id)}
                         >
                           <Plus className="w-4 h-4" /> Add Lecture
                         </Button>
@@ -633,7 +762,7 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
           <Button
             variant="secondary"
             className="w-full flex items-center gap-2 py-6 text-lg "
-            onClick={() => setShowSectionDialog(true)}
+            onClick={handleAddSectionButton}
           >
             <Plus className="w-5 h-5" /> Section
           </Button>
@@ -650,7 +779,7 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
                   placeholder="Enter a Title"
                   required
                   minLength={3}
-                  maxLength={80}
+                  maxLength={50}
                 />
                 <div>
                   <label className="text-sm font-medium">
@@ -670,7 +799,7 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setShowSectionDialog(false)}
+                    onClick={handleCancelSectionDialog}
                   >
                     Cancel
                   </Button>

@@ -66,41 +66,46 @@ const StudentLiveList = (props: Props) => {
     );
 
   return (
-    <div className="space-y-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5">
-      {streams.map((s: any) => (
-        <Link
-          key={s.id}
-          href={`/courses/live-stream/${s.id}`}
-          className="block"
-        >
-          {/* Use shadcn Card layout for each stream */}
-          <Card className="hover:shadow-sm  transition">
-            <CardHeader className="flex items-start justify-between gap-4 py-3 px-4">
-              <div>
-                <CardTitle className="font-semibold">{s.title}</CardTitle>
+    <div className="">
+      <h4>Live Streams</h4>
+      <div className="space-y-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 py-3">
+        {streams.map((s: any) => (
+          <Link
+            key={s.id}
+            href={`/courses/live-stream/${s.id}`}
+            className="block"
+          >
+            {/* Use shadcn Card layout for each stream */}
+            <Card className="hover:shadow-sm  transition">
+              <CardHeader className="flex items-start justify-between gap-4 py-3 px-4">
+                <div>
+                  <CardTitle className="font-semibold text-xl">
+                    {s.title}
+                  </CardTitle>
+                  <div className="text-sm text-muted-foreground">
+                    {s.description ?? ""}
+                  </div>
+                </div>
+
+                <div className="text-right text-xs text-muted-foreground flex flex-col items-end">
+                  <div className="mb-2">
+                    {s.scheduled_start_at
+                      ? new Date(s.scheduled_start_at).toLocaleString()
+                      : ""}
+                  </div>
+                </div>
+              </CardHeader>
+
+              <CardContent className="pt-0 px-4 pb-4">
                 <div className="text-sm text-muted-foreground">
-                  {s.description ?? ""}
+                  Instructor: {s.instructor?.first_name ?? ""}{" "}
+                  {s.instructor?.last_name ?? ""}
                 </div>
-              </div>
-
-              <div className="text-right text-xs text-muted-foreground flex flex-col items-end">
-                <div className="mb-2">
-                  {s.scheduled_start_at
-                    ? new Date(s.scheduled_start_at).toLocaleString()
-                    : ""}
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="pt-0 px-4 pb-4">
-              <div className="text-sm text-muted-foreground">
-                Instructor: {s.instructor?.first_name ?? ""}{" "}
-                {s.instructor?.last_name ?? ""}
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-      ))}
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 };
