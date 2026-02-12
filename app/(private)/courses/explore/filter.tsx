@@ -34,9 +34,50 @@ export function CourseFilters({
     filters.maxPrice ?? 5000,
   ]);
 
-  const activeCategory = COURSE_CATEGORIES.find(
-    (c) => c.value === filters.primary_category
+  // Default filter values
+  const defaultFilters: CourseFilters = {
+    search: "",
+    primary_category: undefined,
+    sub_category: undefined,
+    is_free: false,
+    minPrice: 0,
+    maxPrice: 5000,
+  };
+
+  function handleClearFilters() {
+    setFilters(defaultFilters);
+    setPriceRange([0, 5000]);
+  }
+
+  // Check if any filter is applied (not default)
+  const isFilterApplied =
+    (filters.search && filters.search !== "") ||
+    filters.primary_category !== undefined ||
+    filters.sub_category !== undefined ||
+    filters.is_free === true ||
+    filters.minPrice !== 0 ||
+    filters.maxPrice !== 5000;
+
+  // Add 'All' option to categories
+  const categoriesWithAll = [
+    { label: "All", value: "all", children: [{ label: "All", value: "all" }] },
+    ...COURSE_CATEGORIES,
+  ];
+
+  const activeCategory = categoriesWithAll.find(
+    (c) => c.value === (filters.primary_category || "all"),
   );
+
+  // Helper to set subcategory and always set primary_category
+  function handleSubCategoryChange(subValue: string) {
+    if (activeCategory) {
+      setFilters({
+        ...filters,
+        primary_category: activeCategory.value,
+        sub_category: subValue,
+      });
+    }
+  }
 
   return (
     <aside className="w-full md:w-72 p-6 rounded-2xl bg-sidebar shadow space-y-6">
@@ -44,26 +85,35 @@ export function CourseFilters({
       <Input
         placeholder="Search courses"
         value={filters.search ?? ""}
-        onChange={(e) =>
-          setFilters({ ...filters, search: e.target.value })
-        }
+        onChange={(e) => setFilters({ ...filters, search: e.target.value })}
       />
+
+      {/* Clear Filters Button */}
+      {isFilterApplied && (
+        <button
+          className="mt-2 mb-2 px-4 py-2 rounded bg-muted text-sm text-foreground hover:bg-accent border border-border"
+          onClick={handleClearFilters}
+          type="button"
+        >
+          Clear Filters
+        </button>
+      )}
 
       <Accordion type="multiple" className="space-y-4">
         {/* CATEGORY */}
         <FilterItem title="Category">
           <div className="space-y-2">
-            {COURSE_CATEGORIES.map((cat) => (
+            {categoriesWithAll.map((cat) => (
               <div key={cat.value} className="flex items-center gap-3">
                 <Checkbox
-                  checked={filters.primary_category === cat.value}
-                  onCheckedChange={() =>
+                  checked={(filters.primary_category || "all") === cat.value}
+                  onCheckedChange={() => {
                     setFilters({
                       ...filters,
                       primary_category: cat.value,
-                      sub_category: undefined,
-                    })
-                  }
+                      sub_category: "all",
+                    });
+                  }}
                 />
                 <span className="text-sm">{cat.label}</span>
               </div>
@@ -82,10 +132,14 @@ export function CourseFilters({
               {activeCategory.children.map((sub) => (
                 <div key={sub.value} className="flex items-center gap-3">
                   <Checkbox
-                    checked={filters.sub_category === sub.value}
-                    onCheckedChange={() =>
-                      setFilters({ ...filters, sub_category: sub.value })
-                    }
+                    checked={(filters.sub_category || "all") === sub.value}
+                    onCheckedChange={() => {
+                      setFilters({
+                        ...filters,
+                        primary_category: activeCategory.value,
+                        sub_category: sub.value,
+                      });
+                    }}
                   />
                   <span className="text-sm">{sub.label}</span>
                 </div>
@@ -100,9 +154,7 @@ export function CourseFilters({
             <span className="text-sm">Free courses only</span>
             <Switch
               checked={filters.is_free ?? false}
-              onCheckedChange={(v) =>
-                setFilters({ ...filters, is_free: v })
-              }
+              onCheckedChange={(v) => setFilters({ ...filters, is_free: v })}
             />
           </div>
           <div className="py-2 pt-5">
@@ -125,7 +177,6 @@ export function CourseFilters({
             </p>
           </div>
         </FilterItem>
-
       </Accordion>
     </aside>
   );
@@ -146,9 +197,7 @@ function FilterItem({
       <AccordionTrigger className="text-sm font-medium">
         {title}
       </AccordionTrigger>
-      <AccordionContent className="pt-2">
-        {children}
-      </AccordionContent>
+      <AccordionContent className="pt-2">{children}</AccordionContent>
     </AccordionItem>
   );
 }

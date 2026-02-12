@@ -175,11 +175,7 @@ export default function AnnouncementStep({ courseId, instructorId }: Announcemen
             <div>
               <label className="block font-medium mb-1">Message</label>
               <MarkdownEditor value={message} onChange={setMessage} placeholder="Write your announcement..." />
-              {/* Preview below the editor */}
-              <div className="mt-2">
-                <label className="block text-xs text-muted-foreground mb-1">Preview:</label>
-                <HtmlPreview html={message} className="border rounded p-2 bg-muted" />
-              </div>
+              
             </div>
             <div className="flex gap-4 items-center">
               <label className="flex items-center gap-2">

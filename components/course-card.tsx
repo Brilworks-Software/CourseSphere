@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Tag } from "lucide-react";
 import { useUserContext } from "@/app/provider/user-context";
+import { formatSentenceCase } from "@/lib/utils";
 
 export type Context =
   | "public"
@@ -101,13 +102,11 @@ export function CourseCard({
             <span className="text-xs">{lessonsCount} lessons</span>
           </div>
         </div>
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-top gap-2 mb-2 h-[50px]">
           <h2 className="text-base font-semibold line-clamp-2 flex-1 text-card-foreground">
             {title}
           </h2>
-          <span className="text-xs px-2 py-1 rounded bg-secondary text-secondary-foreground font-medium ml-2 whitespace-nowrap">
-            {price}
-          </span>
+          <Badge className="h-fit">{price}</Badge>
         </div>
         {/* <div className="text-xs text-muted-foreground line-clamp-2 mb-2 min-h-8 max-h-8 overflow-hidden">
           {desc}
@@ -116,13 +115,13 @@ export function CourseCard({
           {category && (
             <Badge variant="secondary" className="flex items-center gap-1">
               <Tag className="h-3 w-3" />
-              {category}
+              {formatSentenceCase(category)}
             </Badge>
           )}
           {subCategory && (
             <Badge variant="outline" className="flex items-center gap-1">
               <Tag className="h-3 w-3" />
-              {subCategory}
+              {formatSentenceCase(subCategory)}
             </Badge>
           )}
         </div>

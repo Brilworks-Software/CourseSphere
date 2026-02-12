@@ -212,7 +212,7 @@ export default function CourseExplorePage() {
           ) : error ? (
             <div className="text-red-500">Error: {error}</div>
           ) : products.length === 0 ? (
-            <div>No products found.</div>
+            <div>No course found.</div>
           ) : (
             <>
               <div className="grid grid-cols-2  lg:grid-cols-3 gap-6">
@@ -223,7 +223,7 @@ export default function CourseExplorePage() {
 
               {/* Pagination */}
               <div className="flex items-center justify-between mt-6">
-                <div>
+                <div className="flex gap-2">
                   <Button
                     variant={"secondary"}
                     onClick={() => goToPage(filters.page - 1)}

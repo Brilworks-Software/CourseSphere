@@ -36,8 +36,8 @@
 //   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 //   return NextResponse.json({ comment: data });
 // }
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { NextRequest, NextResponse } from "next/server";
+import { supabase } from "@/lib/supabaseClient";
 
 type RouteContext = {
   params: {
@@ -49,37 +49,37 @@ type RouteContext = {
 async function getOrCreateAnnouncementThread(
   announcementId: string,
   userId: string,
-  courseId: string
+  courseId: string,
 ) {
   // 1️⃣ Try to fetch thread by announcement_id
   const { data: existingThread, error: fetchError } = await supabase
-    .from('course_discussion_threads')
-    .select('*')
-    .eq('announcement_id', announcementId)
+    .from("course_discussion_threads")
+    .select("*")
+    .eq("announcement_id", announcementId)
     .single();
 
   if (existingThread) return existingThread;
 
   // 2️⃣ Ensure the announcement exists (to satisfy FK constraint)
   const { data: announcement, error: annError } = await supabase
-    .from('course_announcements')
-    .select('id')
-    .eq('id', announcementId)
+    .from("course_announcements")
+    .select("id")
+    .eq("id", announcementId)
     .single();
 
   if (annError || !announcement) {
-    throw new Error('Announcement not found');
+    throw new Error("Announcement not found");
   }
 
   // 3️⃣ Create thread with announcement_id referencing the announcement
   const { data: newThread, error: insertError } = await supabase
-    .from('course_discussion_threads')
+    .from("course_discussion_threads")
     .insert({
       course_id: courseId,
       user_id: userId,
-      title: 'Announcement',
-      body: '',
-      thread_type: 'announcement',
+      title: "Announcement",
+      body: "",
+      thread_type: "announcement",
       announcement_id: announcementId,
       allow_comments: true,
       is_locked: false,
@@ -96,43 +96,65 @@ async function getOrCreateAnnouncementThread(
  */
 export async function GET(
   req: NextRequest,
-  context: RouteContext | { params: Promise<{ announcementId: string }> }
+  context: RouteContext | { params: Promise<{ announcementId: string }> },
 ) {
   // Await params if it's a Promise (for dynamic API routes)
-  const params = 'then' in context.params ? await context.params : context.params;
+  const params =
+    "then" in context.params ? await context.params : context.params;
   const { announcementId } = params;
 
   if (!announcementId) {
     return NextResponse.json(
-      { error: 'announcementId is required' },
-      { status: 400 }
+      { error: "announcementId is required" },
+      { status: 400 },
     );
   }
 
   // Find the thread for this announcement
   const { data: thread, error: threadError } = await supabase
-    .from('course_discussion_threads')
-    .select('id')
-    .eq('announcement_id', announcementId)
+    .from("course_discussion_threads")
+    .select("id")
+    .eq("announcement_id", announcementId)
     .single();
 
   if (threadError || !thread) {
-    // No thread/comments yet
     return NextResponse.json({ comments: [] });
   }
 
-  // Fetch comments for the thread
-  const { data, error } = await supabase
-    .from('course_discussion_replies')
-    .select('*')
-    .eq('thread_id', thread.id)
-    .order('created_at', { ascending: true });
+  // Fetch comments for the thread (with user_id)
+  const { data: comments, error } = await supabase
+    .from("course_discussion_replies")
+    .select("*")
+    .eq("thread_id", thread.id)
+    .order("created_at", { ascending: true });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ comments: data });
+  // Fetch user data for all unique user_ids
+  const userIds = Array.from(
+    new Set((comments || []).map((c: any) => c.user_id)),
+  );
+  let usersMap: Record<string, any> = {};
+  if (userIds.length > 0) {
+    const { data: users, error: userError } = await supabase
+      .from("users")
+      .select("id, first_name, last_name, profile_picture_url")
+      .in("id", userIds);
+
+    if (!userError && users) {
+      usersMap = Object.fromEntries(users.map((u: any) => [u.id, u]));
+    }
+  }
+
+  // Attach user object to each comment
+  const commentsWithUser = (comments || []).map((comment: any) => ({
+    ...comment,
+    user: usersMap[comment.user_id] || null,
+  }));
+
+  return NextResponse.json({ comments: commentsWithUser });
 }
 
 /**
@@ -140,16 +162,17 @@ export async function GET(
  */
 export async function POST(
   req: NextRequest,
-  context: RouteContext | { params: Promise<{ announcementId: string }> }
+  context: RouteContext | { params: Promise<{ announcementId: string }> },
 ) {
   // Await params if it's a Promise (for dynamic API routes)
-  const params = 'then' in context.params ? await context.params : context.params;
+  const params =
+    "then" in context.params ? await context.params : context.params;
   const { announcementId } = params;
 
   if (!announcementId) {
     return NextResponse.json(
-      { error: 'announcementId is required' },
-      { status: 400 }
+      { error: "announcementId is required" },
+      { status: 400 },
     );
   }
 
@@ -159,17 +182,17 @@ export async function POST(
   // Validate required fields from payload
   if (!course_id) {
     return NextResponse.json(
-      { error: 'course_id is required in body' },
-      { status: 400 }
+      { error: "course_id is required in body" },
+      { status: 400 },
     );
   }
   if (!user_id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!body || typeof body !== 'string') {
+  if (!body || typeof body !== "string") {
     return NextResponse.json(
-      { error: 'Invalid comment body' },
-      { status: 400 }
+      { error: "Invalid comment body" },
+      { status: 400 },
     );
   }
 
@@ -180,13 +203,13 @@ export async function POST(
     const thread = await getOrCreateAnnouncementThread(
       announcementId,
       user_id,
-      course_id
+      course_id,
     );
 
     if (!thread.allow_comments || thread.is_locked) {
       return NextResponse.json(
-        { error: 'Comments are disabled for this announcement' },
-        { status: 403 }
+        { error: "Comments are disabled for this announcement" },
+        { status: 403 },
       );
     }
 
@@ -194,12 +217,12 @@ export async function POST(
      * ✅ Insert comment (thread_id must be the thread's id)
      */
     const { data, error } = await supabase
-      .from('course_discussion_replies')
+      .from("course_discussion_replies")
       .insert({
         thread_id: thread.id,
         user_id,
         body,
-        is_instructor_reply: user_role === 'instructor',
+        is_instructor_reply: user_role === "instructor",
       })
       .select()
       .single();
@@ -210,9 +233,6 @@ export async function POST(
 
     return NextResponse.json({ comment: data }, { status: 201 });
   } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

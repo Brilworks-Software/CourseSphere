@@ -60,6 +60,13 @@ export async function GET(request: Request) {
       );
     }
 
+    // Calculate analytics fields
+    const lecture_count = (lessons || []).length;
+    const total_video_time = (lessons || []).reduce(
+      (sum, lesson) => sum + (lesson.duration || 0),
+      0,
+    );
+
     // Construct video_url for each lesson if aws_asset_key exists
     const AWS_REGION = process.env.AWS_REGION;
     const AWS_S3_BUCKET = process.env.AWS_S3_BUCKET;
@@ -155,6 +162,8 @@ export async function GET(request: Request) {
       sections: sectionsWithLessons,
       enrollment: enrollment || null,
       instructor,
+      lecture_count,
+      total_video_time,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

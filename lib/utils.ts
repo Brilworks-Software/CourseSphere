@@ -27,7 +27,7 @@ export const APP_PRIMARY_COLOR = "00b9c3"; // Use your theme's primary color
  */
 export function generateAvatarUrl(
   name: string,
-  background: string = APP_PRIMARY_COLOR
+  background: string = APP_PRIMARY_COLOR,
 ) {
   const parts = name.trim().split(" ");
   const initials = (parts[0]?.charAt(0) || "") + (parts[1]?.charAt(0) || "");
@@ -52,7 +52,7 @@ export interface SessionVerificationParams {
 }
 
 export const parseHashParamsForSessionVerification = (
-  hash: string
+  hash: string,
 ): SessionVerificationParams => {
   const params = new URLSearchParams(hash.replace(/^#/, ""));
   return {
@@ -64,7 +64,6 @@ export const parseHashParamsForSessionVerification = (
     code: params.get("code"),
   };
 };
-
 
 export const EDITOR_TOOLBAR =
   "blocks | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent";
@@ -80,7 +79,10 @@ export function totalSecondsFromCourse(course: any) {
     if (!lessons.length) return 0;
 
     // Sum raw durations (unknown unit)
-    const sumRaw = lessons.reduce((sum: number, l: any) => sum + (Number(l.duration) || 0), 0);
+    const sumRaw = lessons.reduce(
+      (sum: number, l: any) => sum + (Number(l.duration) || 0),
+      0,
+    );
     const avgRaw = sumRaw / lessons.length;
 
     // Heuristic:
@@ -117,4 +119,20 @@ export function formatHMS(totalSeconds: number) {
     return s ? `${m}m ${s}s` : `${m}m`;
   }
   return `${s}s`;
+}
+
+/**
+ * Converts a snake_case or kebab-case string to sentence case.
+ * Example: "web_development" => "Web Development"
+ */
+export function formatSentenceCase(str: string): string {
+  if (!str) return "";
+  return str
+    .replace(/[-_]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(
+      /\w\S*/g,
+      (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase(),
+    );
 }
