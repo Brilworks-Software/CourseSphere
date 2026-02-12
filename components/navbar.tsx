@@ -2,20 +2,22 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { ThemeToggle } from "./theme-toggle";
 import { LogOut } from "lucide-react";
 import Logo from "./logo";
 import { useUserContext } from "@/app/provider/user-context";
 import { useAuth } from "@/app/provider/AuthProvider";
+import Cookies from "js-cookie";
 
 const Navbar = () => {
   const pathname = usePathname();
   const { user } = useUserContext();
   const { logout } = useAuth();
-
+  const router = useRouter();
   const handleSignOut = async () => {
     await logout();
+    router.push("/login");
   };
 
   // Helper to render nav links with active detection
@@ -50,7 +52,8 @@ const Navbar = () => {
     label: React.ReactNode;
     activeWhen?: string[];
   };
-  let links: NavLinkItem[] = [
+
+  const links: NavLinkItem[] = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/courses", label: "Courses" },
   ];
@@ -58,7 +61,7 @@ const Navbar = () => {
   if (user?.role === "admin") {
     links.push(
       { href: "/courses/new", label: "Create Course" },
-      { href: "/organization", label: "Manage Organization" }
+      { href: "/organization", label: "Manage Organization" },
     );
   }
 

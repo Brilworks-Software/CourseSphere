@@ -12,7 +12,7 @@ export interface SignupResult {
   success: boolean;
 }
 
-const signUpUser = async (userData: SignupUserData): Promise<SignupResult> => {
+const signUpUser = async (userData: SignupUserData) => {
   const response = await fetch("/api/auth/register", {
     method: "POST",
     body: JSON.stringify(userData),

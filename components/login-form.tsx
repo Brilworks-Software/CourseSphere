@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,13 +16,13 @@ import {
 import Logo from "./logo";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useLogin } from "@/app/hooks/auth/useLogin";
+import Cookies from "js-cookie";
 
 export default function LogInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const router = useRouter();
   const { login, isLoggingIn } = useLogin();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -32,13 +31,13 @@ export default function LogInForm() {
 
     try {
       const res = await login({ email, password });
-      console.log("response is the ", res);
       if (res.success) {
+        Cookies.set("sb-auth-token", res.data.session.access_token);
+        Cookies.set("sb-user-id", res.data.session.user.id);
         window.location.href = "/dashboard";
-        console.log("Login successful, redirecting...");
       }
-    } catch (err: any) {
-      setError(err.message || "Sign in failed");
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : "Sign in failed");
     }
   };
 

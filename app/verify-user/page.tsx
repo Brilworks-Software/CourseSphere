@@ -13,14 +13,17 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import Loader from "@/components/loader";
+import { TokenManager } from "@/lib/token-manager";
+import Cookies from "js-cookie";
 
 function LoadingFallback() {
   return <Loader />;
 }
 
-export default function VerifyPage() {
+export default function VerifyPage({ searchParams }: { searchParams: any }) {
   const [status, setStatus] = useState("verifying"); //"verifying", "success", "error"
   const [error, setError] = useState<string | null>(null);
+  const { redirect } = searchParams;
   const { refetchUser } = useAuth();
   const router = useRouter();
 
@@ -31,7 +34,7 @@ export default function VerifyPage() {
       try {
         // Parse tokens from hash
         const hashParams = parseHashParamsForSessionVerification(
-          window.location.hash
+          window.location.hash,
         );
         const { access_token, refresh_token, expires_at } = hashParams;
         if (!access_token || !refresh_token || !expires_at) {
@@ -52,6 +55,13 @@ export default function VerifyPage() {
           toast.error("Failed to verify session.");
           return;
         }
+        const data = await res.json();
+        const { tokenData } = data;
+        Cookies.set("sb-auth-token", tokenData.access_token);
+        Cookies.set("sb-user-id", tokenData.user_id);
+        router.push(redirect || "/dashboard");
+        // TokenManager.setTokens(tokenData);
+
         setStatus("success");
         toast.success("Email verified successfully!");
         refetchUser();
@@ -62,9 +72,9 @@ export default function VerifyPage() {
           err &&
           typeof err === "object" &&
           "message" in err &&
-          typeof (err as any).message === "string"
+          typeof (err as Error).message === "string"
         ) {
-          message = (err as any).message;
+          message = (err as Error).message;
         }
         setError(message);
         toast.error(message);
