@@ -27,11 +27,11 @@ export default function EnrolledView({
     <div className="space-y-8 p-4 max-w-450 mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-10 gap-8">
         <div className="lg:col-span-7 space-y-6">
-          <Card>
+          <Card className="overflow-hidden">
             <div className="p-0">
               {currentLesson && allLessons ? (
                 <div className="w-full">
-                  <div className="aspect-video">
+                  <div className="aspect-video overflow-hidden">
                     {/* Simple HTML5 video player */}
                     <video
                       src={signedVideoUrl || ""}

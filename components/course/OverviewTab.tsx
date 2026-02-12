@@ -3,17 +3,6 @@ import HtmlPreview from "@/components/html-preview";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Star, Users, Clock, FileText, Play } from "lucide-react";
 
-function formatHMS(totalSeconds: number) {
-  if (totalSeconds === null || totalSeconds === undefined) return "—";
-  if (totalSeconds <= 0) return "0s";
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-  if (h > 0) return s ? `${h}h ${m}m ${s}s` : `${h}h ${m}m`;
-  if (m > 0) return s ? `${m}m ${s}s` : `${m}m`;
-  return `${s}s`;
-}
-
 export default function OverviewTab({
   course,
   instructor,
@@ -23,6 +12,8 @@ export default function OverviewTab({
   rating,
   reviewsCount,
   studentsCount,
+  lecture_count,
+  total_video_time,
 }: any) {
   const nf = new Intl.NumberFormat();
   return (
@@ -81,7 +72,7 @@ export default function OverviewTab({
                   <Play className="w-5 h-5 text-primary" />
                   <div>
                     <div className="font-medium text-foreground">
-                      {lessonsCount} Lectures
+                      {lecture_count ?? lessonsCount} Lectures
                     </div>
                     <div className="text-xs text-muted-foreground">
                       Short lessons for quick learning
@@ -92,7 +83,7 @@ export default function OverviewTab({
                   <Clock className="w-5 h-5 text-primary" />
                   <div>
                     <div className="font-medium text-foreground">
-                      {formattedTotal}
+                      {total_video_time}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       Total video time

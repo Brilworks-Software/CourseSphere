@@ -292,7 +292,7 @@ export default function OrganizationSettingsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>Name</Label>
+                <Label className="mb-1">Name</Label>
                 <Input
                   value={org?.name || ""}
                   onChange={(e) => setOrg({ ...org!, name: e.target.value })}
@@ -300,7 +300,7 @@ export default function OrganizationSettingsPage() {
                 />
               </div>
               <div>
-                <Label>Slug</Label>
+                <Label className="mb-1">Slug</Label>
                 <Input
                   value={org?.slug || ""}
                   onChange={(e) => setOrg({ ...org!, slug: e.target.value })}
@@ -308,7 +308,7 @@ export default function OrganizationSettingsPage() {
                 />
               </div>
               <div>
-                <Label>Description</Label>
+                <Label className="mb-1">Description</Label>
                 <Textarea
                   rows={3}
                   value={org?.description || ""}

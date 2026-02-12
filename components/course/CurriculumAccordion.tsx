@@ -45,7 +45,7 @@ export default function CurriculumAccordion({
         <AccordionItem key={section.id} value={section.id} className="mb-2 border border-border rounded-lg bg-card overflow-hidden">
           <AccordionTrigger className="flex-1 min-w-0 bg-card px-4 py-3 hover:no-underline">
             <div className="flex items-center gap-2 min-w-0">
-              <Layers className="w-5 h-5 text-primary" />
+              <Layers className="w-5 h-5 min-w-6 text-primary" />
               <span className="font-semibold text-base ">{section.title}</span>
               {section.description && (
                 <span className="ml-2 text-xs text-muted-foreground italic ">{section.description}</span>
@@ -68,7 +68,7 @@ export default function CurriculumAccordion({
                     onClick={() => onLessonSelect?.(lesson.id)}
                   >
                     {currentLessonId === lesson.id ? (
-                      <PlayCircle className="w-4 h-4 text-primary" />
+                      <PlayCircle className="w-4 h-4 min-w-5 text-primary" />
                     ) : (
                       lesson.video_url && <Video className="w-4 h-4 text-primary" />
                     )}

@@ -86,17 +86,16 @@ export default function AdminSingleCourse({ id }: { id: string }) {
           >
             <AccordionTrigger className="flex-1 min-w-0 bg-card px-4 py-3 hover:no-underline">
               <div className="flex items-center gap-2 min-w-0">
-                <Layers className="w-5 h-5 text-primary" />
+                <Layers className="w-5 h-5 min-w-6 text-primary" />
                 <span className="font-semibold text-base">{section.title}</span>
                 {section.description && (
-                  <span className="ml-2 text-xs text-muted-foreground italic">
+                  <span className="ml-2 text-xs text-muted-foreground ">
                     {section.description}
                   </span>
                 )}
               </div>
             </AccordionTrigger>
             <AccordionContent className="bg-card">
-              <div className="font-semibold text-sm mb-2">Lessons</div>
               <div className="space-y-2 p-3">
                 {section.lessons?.length ? (
                   section.lessons.map((lesson: any, idx: number) => (

@@ -5,21 +5,21 @@ import OverviewTab from "./OverviewTab";
 import AnnouncementsTab from "./AnnouncementsTab";
 import ReviewsTab from "./ReviewsTab";
 import LearningToolsTab from "./LearningToolsTab";
-import { formatHMS, totalSecondsFromCourse } from "@/lib/utils";
+import { formatHMS } from "@/lib/utils";
 
 
 export default function Tabs({ course, instructor, organization }: any) {
   const { user } = useUserContext();
-  const tabs = ["Overview", "Announcements", "Reviews", "Learning tools"];
+  const tabs = ["Overview", "Announcements"];
+  // const tabs = ["Overview", "Announcements", "Reviews", "Learning tools"];
   const [active, setActive] = useState(tabs[0]);
 
   // compute derived values (updated to use seconds)
-  const lessonsCount = (course?.lessons ?? []).length;
-  const totalSeconds = totalSecondsFromCourse(course);
-  const formattedTotal = formatHMS(totalSeconds);
+  const lessonsCount = (course?.lecture_count) ?? 0;
+  const formattedTotal = formatHMS(course?.total_video_time ?? 0);
   const reviewsCount = Number(course?.reviews_count ?? 0);
   const studentsCount = Number(course?.students_count ?? (course?.enrollment ? 1 : 0));
-  const rating = course?.rating ?? 4.4;
+  const rating = course?.rating ?? 0;
 
   return (
     <div>
@@ -46,6 +46,8 @@ export default function Tabs({ course, instructor, organization }: any) {
             rating={rating}
             reviewsCount={reviewsCount}
             studentsCount={studentsCount}
+            lecture_count={lessonsCount}
+            total_video_time={formattedTotal}
           />
         )}
         {active === "Announcements" && (

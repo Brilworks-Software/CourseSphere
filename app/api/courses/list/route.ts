@@ -26,7 +26,7 @@ export async function GET(request: Request) {
       .from("courses")
       .select(
         "*, organization:organization_id(id, name, slug, logo_url, thumbnail_url), lessons(count)",
-        { count: "exact" }
+        { count: "exact" },
       )
       .eq("is_active", true);
 
@@ -34,10 +34,10 @@ export async function GET(request: Request) {
     if (search) {
       query = query.ilike("title", `%${search}%`);
     }
-    if (primary_category) {
+    if (primary_category && primary_category !== "all") {
       query = query.eq("primary_category", primary_category);
     }
-    if (sub_category) {
+    if (sub_category && sub_category !== "all") {
       query = query.eq("sub_category", sub_category);
     }
     if (is_free === "1" || is_free === "true") {
@@ -110,7 +110,7 @@ export async function GET(request: Request) {
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

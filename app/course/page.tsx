@@ -20,7 +20,8 @@ type Product = any;
 function buildQuery(filters: any, user: any) {
   const params = new URLSearchParams();
   if (filters.search) params.set("search", filters.search);
-  if (filters.category) params.set("category", filters.category);
+  if (filters.primary_category)
+    params.set("primary_category", filters.primary_category);
   if (filters.sub_category) params.set("sub_category", filters.sub_category);
   if (filters.minPrice !== undefined)
     params.set("minPrice", String(filters.minPrice));
@@ -102,7 +103,7 @@ export default function CourseExplorePage() {
             page: filters.page || 1,
             perPage: filters.perPage || 12,
             totalPages: 1,
-          }
+          },
         );
       })
       .catch((err) => setError(err.message))
@@ -226,7 +227,7 @@ export default function CourseExplorePage() {
             ) : error ? (
               <div className="text-red-500">Error: {error}</div>
             ) : products.length === 0 ? (
-              <div>No products found.</div>
+              <div>No course found.</div>
             ) : (
               <>
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
@@ -237,7 +238,7 @@ export default function CourseExplorePage() {
 
                 {/* Pagination */}
                 <div className="flex items-center justify-between mt-6">
-                  <div>
+                  <div className="flex gap-2">
                     <Button
                       variant={"secondary"}
                       onClick={() => goToPage(filters.page - 1)}
