@@ -7,14 +7,7 @@ export interface LoginUserData {
   password: string;
 }
 
-export interface LoginResult {
-  success: boolean;
-}
-
-const loginUser = async ({
-  email,
-  password,
-}: LoginUserData): Promise<LoginResult> => {
+const loginUser = async ({ email, password }: LoginUserData) => {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -22,11 +15,11 @@ const loginUser = async ({
   if (error || !data.session) {
     throw new Error(error?.message || "Failed to sign in");
   }
-  return { success: true };
+  return { data, success: true };
 };
 
 export function useLogin() {
-  const mutation = useMutation<LoginResult, Error, LoginUserData>({
+  const mutation = useMutation({
     mutationFn: loginUser,
     mutationKey: ["login"],
   });

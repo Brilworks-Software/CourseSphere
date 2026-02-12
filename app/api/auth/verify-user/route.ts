@@ -9,7 +9,7 @@ export async function POST(req: Request) {
         { error: "Missing tokens" },
         {
           status: 400,
-        }
+        },
       );
     }
 
@@ -23,16 +23,16 @@ export async function POST(req: Request) {
       expires_at: parseInt(expires_at, 10),
       user_id: user_id,
     };
-    const response = NextResponse.json({ success: true });
+    const response = NextResponse.json({ tokenData, success: true });
     TokenManager.setTokens(tokenData, response);
 
     return response;
-  } catch (err: any) {
+  } catch (err: Error | unknown) {
     return NextResponse.json(
       {
-        error: err.message || "Failed to verify session",
+        error: err instanceof Error ? err.message : "Failed to verify session",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

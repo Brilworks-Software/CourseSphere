@@ -176,6 +176,7 @@ import React, {
 import { useUserContext } from "./user-context";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
 
 interface RegisterData {
   email: string;
@@ -213,10 +214,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Call API route with user id
       const res = await fetch(
-        `/api/users?id=${encodeURIComponent(authUser.id)}`
+        `/api/users?id=${encodeURIComponent(authUser.id)}`,
       );
       const data = await res.json();
-      setUser(res.ok ? data?.user ?? null : null);
+      setUser(res.ok ? (data?.user ?? null) : null);
     } catch {
       setUser(null);
     } finally {
@@ -248,7 +249,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
       }
     },
-    [setUser]
+    [setUser],
   );
 
   const register = useCallback(
@@ -264,7 +265,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(result.user);
       return { success: true };
     },
-    [setUser]
+    [setUser],
   );
 
   // const logout = useCallback(() => {
@@ -272,10 +273,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // }, [setUser]);
   const logout = async () => {
     setIsLoading(true);
+    Cookies.remove("sb-auth-token");
+    Cookies.remove("sb-user-id");
     await supabase.auth.signOut();
     setUser(null);
     setIsLoading(false);
-    router.replace("/");
   };
 
   const refetchUser = useCallback(async () => {
@@ -284,7 +286,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const value = useMemo(
     () => ({ isLoading, login, logout, register, refetchUser }),
-    [isLoading, login, logout, register, refetchUser]
+    [isLoading, login, logout, register, refetchUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
