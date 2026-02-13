@@ -194,6 +194,15 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+const supabaseId =
+  process.env.NEXT_PUBLIC_SUPABASE_URL?.split("//")[1].split(".")[0];
+
+const removeCookies = () => {
+  Cookies.remove("sb-auth-token");
+  Cookies.remove("sb-user-id");
+  Cookies.remove(`sb-${supabaseId}-auth-token`);
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { setUser } = useUserContext();
   const [isLoading, setIsLoading] = useState(true);
@@ -268,17 +277,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     [setUser],
   );
 
-  // const logout = useCallback(() => {
-  //   setUser(null);
-  // }, [setUser]);
-  const logout = async () => {
+  const logout = useCallback(async () => {
     setIsLoading(true);
-    Cookies.remove("sb-auth-token");
-    Cookies.remove("sb-user-id");
+    removeCookies();
     await supabase.auth.signOut();
     setUser(null);
     setIsLoading(false);
-  };
+  }, [setUser, setIsLoading]);
 
   const refetchUser = useCallback(async () => {
     await fetchUser();

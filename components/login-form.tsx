@@ -17,6 +17,7 @@ import Logo from "./logo";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useLogin } from "@/app/hooks/auth/useLogin";
 import Cookies from "js-cookie";
+import { useRouter } from "next/navigation";
 
 export default function LogInForm() {
   const [email, setEmail] = useState("");
@@ -24,7 +25,7 @@ export default function LogInForm() {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const { login, isLoggingIn } = useLogin();
-
+  const router = useRouter();
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -101,6 +102,14 @@ export default function LogInForm() {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              <div className="flex justify-end">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-primary underline-offset-2 hover:underline"
+                >
+                  Forgot your password?
+                </Link>
+              </div>
             </Field>
 
             <Field>
@@ -116,15 +125,15 @@ export default function LogInForm() {
               </Button>
             </Field>
 
-            <FieldSeparator>Or continue with</FieldSeparator>
-
             <Field>
-              <FieldDescription className="text-center">
-                Don&apos;t have an account?{" "}
-                <Link href="/signup" className="font-semibold">
-                  Sign up
-                </Link>
-              </FieldDescription>
+              <div className="flex flex-col items-center gap-2">
+                <FieldDescription className="text-center">
+                  Don&apos;t have an account?{" "}
+                  <Link href="/signup" className="font-semibold">
+                    Sign up
+                  </Link>
+                </FieldDescription>
+              </div>
             </Field>
           </FieldGroup>
         </form>

@@ -60,7 +60,7 @@ const Navbar = () => {
 
   if (user?.role === "admin") {
     links.push(
-      { href: "/courses/new", label: "Create Course" },
+      // { href: "/courses/new", label: "Create Course" },
       { href: "/organization", label: "Manage Organization" },
     );
   }
