@@ -131,7 +131,7 @@ export function CourseCard({
 
   return (
     <Card
-      className={`rounded-2xl border bg-card shadow-sm hover:shadow-lg transition-shadow duration-200 max-w-sm ${className}`}
+      className={`rounded-lg border bg-card shadow-sm hover:shadow-lg transition-shadow duration-200 max-w-lg ${className}`}
     >
       {/* If user is logged in, navigate normally. Otherwise show modal on click */}
       {user ? (

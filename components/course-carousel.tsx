@@ -1,15 +1,21 @@
 "use client";
-import React, { useRef } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import React from "react";
 import { CourseCard } from "@/components/course-card";
-import type { Context } from "@/components/course-card"; // add this import
+import type { Context } from "@/components/course-card";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from "@/components/ui/carousel";
 
 type Course = any;
 
 interface CourseCarouselProps {
   courses: Course[];
   role?: "student" | "instructor" | string;
-  context?: Context; // update type here
+  context?: Context;
   isEnrolled?: boolean;
 }
 
@@ -19,39 +25,24 @@ export default function CourseCarousel({
   context,
   isEnrolled,
 }: CourseCarouselProps) {
-  const scrollerRef = useRef<HTMLDivElement | null>(null);
-
-  const scroll = (direction: "left" | "right") => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const amount = Math.round(el.clientWidth * 0.9);
-    const to =
-      direction === "left" ? el.scrollLeft - amount : el.scrollLeft + amount;
-    el.scrollTo({ left: to, behavior: "smooth" });
-  };
-
   if (!courses || courses.length === 0) return null;
 
   return (
-    <div className="relative">
-      <button
-        type="button"
-        aria-label="Previous"
-        onClick={() => scroll("left")}
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 border rounded-full bg-background/80 backdrop-blur hover:bg-background"
-      >
-        <ChevronLeft className="h-5 w-5 text-foreground" />
-      </button>
-
-      <div
-        ref={scrollerRef}
-        className="flex gap-4 overflow-x-auto scroll-smooth px-8 py-2 hide-scrollbar"
-        role="list"
-      >
+    <Carousel
+      className="w-full"
+      showArrows={true}
+      header={
+          <>
+            <h2 className="text-xl font-bold text-foreground">My Enrolled Courses</h2>
+          </>
+        }
+      // You can pass a header prop if needed
+    >
+      <CarouselContent>
         {courses.map((course: any) => (
-          <div
+          <CarouselItem
             key={course.id}
-            className="min-w-[260px] md:min-w-[320px] flex-shrink-0"
+            className="md:basis-1/2 lg:basis-1/4"
           >
             <CourseCard
               course={course}
@@ -59,18 +50,10 @@ export default function CourseCarousel({
               context={context}
               isEnrolled={!!isEnrolled}
             />
-          </div>
+          </CarouselItem>
         ))}
-      </div>
-
-      <button
-        type="button"
-        aria-label="Next"
-        onClick={() => scroll("right")}
-        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full border bg-background/80 backdrop-blur hover:bg-background"
-      >
-        <ChevronRight className="h-5 w-5 text-foreground" />
-      </button>
-    </div>
+      </CarouselContent>
+      {/* Arrows are rendered by Carousel when showArrows is true */}
+    </Carousel>
   );
 }
