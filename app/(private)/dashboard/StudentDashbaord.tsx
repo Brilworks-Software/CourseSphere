@@ -19,15 +19,6 @@ export default function StudentDashboard() {
       {/* Enrolled Courses (removed outer card; use admin-style articles) */}
       <div>
         <StudentLiveList />
-        <div className="py-5 flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-foreground">
-            My Enrolled Courses
-          </h2>
-          <Link href="/courses" className="text-sm hover:underline">
-            Browse all courses
-          </Link>
-        </div>
-
         <EnrolledCoursesClient />
       </div>
     </div>

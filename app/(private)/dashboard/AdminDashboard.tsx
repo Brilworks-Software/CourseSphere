@@ -8,6 +8,13 @@ import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import Loader from "@/components/loader";
 import { useUserContext } from "@/app/provider/user-context";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from "@/components/ui/carousel";
 
 export default function AdminDashboard() {
   const { user } = useUserContext();
@@ -29,7 +36,7 @@ export default function AdminDashboard() {
         .from("courses")
         .select(
           "*, organization:organization_id(id, name, slug, logo_url, thumbnail_url), lessons(count)",
-          { count: "exact" }
+          { count: "exact" },
         )
         .eq("instructor_id", user.id)
         .order("created_at", { ascending: false });
@@ -122,20 +129,33 @@ export default function AdminDashboard() {
   let coursesGridContent;
   if (loading) {
     coursesGridContent = (
-      <div className="text-center py-16 text-muted-foreground"><Loader /></div>
+      <div className="text-center py-16 text-muted-foreground">
+        <Loader />
+      </div>
     );
   } else if (courses && courses.length > 0) {
     coursesGridContent = (
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {courses.map((course) => (
-          <CourseCard
-            key={course.id}
-            course={course}
-            role={courseCardRole}
-            context="dashboard-admin"
-          />
-        ))}
-      </div>
+      <Carousel
+        className="w-full"
+        header={
+          <>
+            <h2 className="text-xl font-bold text-foreground">My Courses</h2>
+          </>
+        }
+        showArrows={true}
+      >
+        <CarouselContent>
+          {courses.map((course) => (
+            <CarouselItem key={course.id} className="md:basis-1/2 lg:basis-1/4">
+              <CourseCard
+                course={course}
+                role={courseCardRole}
+                context="dashboard-admin"
+              />
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+      </Carousel>
     );
   } else {
     coursesGridContent = (
@@ -198,15 +218,6 @@ export default function AdminDashboard() {
       </div>
 
       <div>
-        <div className=" py-5 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-foreground">My Courses</h2>
-          <Link href="/dashboard/courses" className="no-underline">
-            <Button variant="ghost" size="sm">
-              View all
-            </Button>
-          </Link>
-        </div>
-
         <div>{coursesGridContent}</div>
       </div>
     </div>

@@ -2,6 +2,11 @@
 import Link from "next/link";
 import { useUserContext } from "@/app/provider/user-context";
 import React from "react";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 type Props = {};
@@ -42,6 +47,25 @@ const StudentLiveList = (props: Props) => {
     fetchStreams();
   }, [user?.id]);
 
+  const getYoutubeThumbnail = (videoId?: string, url?: string) => {
+    // Prefer direct videoId if available
+    if (videoId && typeof videoId === "string" && videoId.length === 11) {
+      return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    }
+    // Fallback: extract from URL
+    if (url) {
+      try {
+        const regExp =
+          /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([A-Za-z0-9_-]{11})/;
+        const match = url.match(regExp);
+        if (match && match[1]) {
+          return `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`;
+        }
+      } catch {}
+    }
+    return null;
+  };
+
   if (!user)
     return (
       <div className="text-sm text-muted-foreground">
@@ -66,47 +90,63 @@ const StudentLiveList = (props: Props) => {
     );
 
   return (
-    <div className="">
-      <h4>Live Streams</h4>
-      <div className="space-y-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 py-3">
+    <Carousel
+      className="w-full"
+      showArrows={true}
+      header={
+        <h4 className="text-xl font-bold text-foreground">Live Streams</h4>
+      }
+    >
+      <CarouselContent>
         {streams.map((s: any) => (
-          <Link
-            key={s.id}
-            href={`/courses/live-stream/${s.id}`}
-            className="block"
-          >
-            {/* Use shadcn Card layout for each stream */}
-            <Card className="hover:shadow-sm  transition">
-              <CardHeader className="flex items-start justify-between gap-4 py-3 px-4">
-                <div>
-                  <CardTitle className="font-semibold text-xl">
-                    {s.title}
-                  </CardTitle>
+          <CarouselItem key={s.id} className="md:basis-1/2 lg:basis-1/4">
+            <Link href={`/courses/live-stream/${s.id}`} className="block">
+              <Card className="hover:shadow-sm transition overflow-hidden">
+                {getYoutubeThumbnail(
+                  s.youtube_video_id,
+                  s.youtube_video_url,
+                ) && (
+                  <img
+                    src={
+                      getYoutubeThumbnail(
+                        s.youtube_video_id,
+                        s.youtube_video_url,
+                      )!
+                    }
+                    alt="YouTube Thumbnail"
+                    className="w-full h-40 object-cover rounded-t"
+                    style={{ borderBottom: "1px solid #eee" }}
+                  />
+                )}
+                <CardHeader className="flex items-start justify-between gap-4 py-3 px-4">
+                  <div>
+                    <CardTitle className="font-semibold text-xl">
+                      {s.title}
+                    </CardTitle>
+                    <div className="text-sm text-muted-foreground">
+                      {s.description ?? ""}
+                    </div>
+                  </div>
+                  <div className="text-right text-xs text-muted-foreground flex flex-col items-end">
+                    <div className="mb-2">
+                      {s.scheduled_start_at
+                        ? new Date(s.scheduled_start_at).toLocaleString()
+                        : ""}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0 px-4 pb-4">
                   <div className="text-sm text-muted-foreground">
-                    {s.description ?? ""}
+                    Instructor: {s.instructor?.first_name ?? ""}{" "}
+                    {s.instructor?.last_name ?? ""}
                   </div>
-                </div>
-
-                <div className="text-right text-xs text-muted-foreground flex flex-col items-end">
-                  <div className="mb-2">
-                    {s.scheduled_start_at
-                      ? new Date(s.scheduled_start_at).toLocaleString()
-                      : ""}
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="pt-0 px-4 pb-4">
-                <div className="text-sm text-muted-foreground">
-                  Instructor: {s.instructor?.first_name ?? ""}{" "}
-                  {s.instructor?.last_name ?? ""}
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
+                </CardContent>
+              </Card>
+            </Link>
+          </CarouselItem>
         ))}
-      </div>
-    </div>
+      </CarouselContent>
+    </Carousel>
   );
 };
 

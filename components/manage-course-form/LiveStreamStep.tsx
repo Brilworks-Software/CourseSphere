@@ -57,6 +57,26 @@ export default function LiveStreamStep({
       .finally(() => setTableLoading(false));
   }, [refreshFlag, courseId]);
 
+  // Helper to format ISO date string for datetime-local input
+  function toDatetimeLocal(val: string | null | undefined) {
+    if (!val) return "";
+    // Handles ISO or other formats, returns YYYY-MM-DDTHH:mm
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return "";
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    return (
+      d.getFullYear() +
+      "-" +
+      pad(d.getMonth() + 1) +
+      "-" +
+      pad(d.getDate()) +
+      "T" +
+      pad(d.getHours()) +
+      ":" +
+      pad(d.getMinutes())
+    );
+  }
+
   // When dialog opens for edit/create, set form fields
   useEffect(() => {
     if (dialogOpen) {
@@ -65,8 +85,8 @@ export default function LiveStreamStep({
         setDescription(editingStream.description ?? "");
         setYoutubeVideoId(editingStream.youtube_video_id ?? "");
         setYoutubeVideoUrl(editingStream.youtube_video_url ?? "");
-        setScheduledStartAt(editingStream.scheduled_start_at ?? "");
-        setScheduledEndAt(editingStream.scheduled_end_at ?? "");
+        setScheduledStartAt(toDatetimeLocal(editingStream.scheduled_start_at));
+        setScheduledEndAt(toDatetimeLocal(editingStream.scheduled_end_at));
       } else {
         setTitle("");
         setDescription("");
@@ -117,8 +137,10 @@ export default function LiveStreamStep({
         throw new Error("Invalid YouTube URL — could not extract video id.");
       }
       const payload = {
-        course_id: editingStream?.course_id ?? "",
-        instructor_id: editingStream?.instructor_id ?? "",
+        course_id: isEditing ? (editingStream?.course_id ?? "") : courseId,
+        instructor_id: isEditing
+          ? (editingStream?.instructor_id ?? "")
+          : instructorId,
         title,
         description,
         youtube_video_id: youtubeVideoId || null,
