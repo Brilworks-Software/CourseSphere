@@ -51,25 +51,16 @@ export async function GET(request: Request) {
     }
 
     /* ------------------ Sorting ------------------ */
-    switch (sort) {
-      case "oldest":
-        query = query.order("created_at", { ascending: true });
-        break;
-      case "price_asc":
-        query = query.order("price", { ascending: true });
-        break;
-      case "price_desc":
-        query = query.order("price", { ascending: false });
-        break;
-      case "title_asc":
-        query = query.order("title", { ascending: true });
-        break;
-      case "title_desc":
-        query = query.order("title", { ascending: false });
-        break;
-      default:
-        query = query.order("created_at", { ascending: false });
-    }
+    const sortConfig: Record<string, { column: string; ascending: boolean }> = {
+      oldest: { column: "created_at", ascending: true },
+      newest: { column: "created_at", ascending: false },
+      price_asc: { column: "price", ascending: true },
+      price_desc: { column: "price", ascending: false },
+      title_asc: { column: "title", ascending: true },
+      title_desc: { column: "title", ascending: false },
+    };
+    const { column, ascending } = sortConfig[sort] ?? sortConfig.newest;
+    query = query.order(column, { ascending });
 
     /* ------------------ Pagination ------------------ */
     const from = (page - 1) * perPage;

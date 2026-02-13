@@ -19,8 +19,11 @@ type Product = any;
 function buildQuery(filters: any, user: any) {
   const params = new URLSearchParams();
   if (filters.search) params.set("search", filters.search);
+  if (filters.primary_category)
+    params.set("primary_category", filters.primary_category);
   if (filters.category) params.set("category", filters.category);
   if (filters.sub_category) params.set("sub_category", filters.sub_category);
+  if (filters.is_free) params.set("is_free", filters.is_free ? "1" : "0");
   if (filters.minPrice !== undefined)
     params.set("minPrice", String(filters.minPrice));
   if (filters.maxPrice !== undefined)
@@ -87,6 +90,7 @@ export default function CourseExplorePage() {
   // whenever filters change, sync URL and fetch
   useEffect(() => {
     // sync URL (replace, not push, so back button behavior is nicer)
+    console.log("filters", filters);
     const qs = buildQuery(filters, user);
     router.replace(`${window.location.pathname}?${qs}`);
 
@@ -101,7 +105,7 @@ export default function CourseExplorePage() {
             page: filters.page || 1,
             perPage: filters.perPage || 12,
             totalPages: 1,
-          }
+          },
         );
       })
       .catch((err) => setError(err.message))
