@@ -10,7 +10,7 @@ import React from "react"; // Add React import for React.use()
 export default function DashboardPage({
   searchParams,
 }: {
-  // searchParams may include `lesson` and `ow` (owned flag)
+  // searchParams may include `lesson` and `ow` (owned flag) 
   searchParams?: { lesson?: string; ow?: string };
 }) {
   const { user } = useUserContext();

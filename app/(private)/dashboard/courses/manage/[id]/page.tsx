@@ -51,7 +51,7 @@ export default function ManageCoursePage() {
     return (
       <div className="h-full w-full flex flex-col justify-center items-center gap-4">
         <p className="text-destructive font-semibold">{error}</p>
-        <Link href="/dashboard/courses">
+        <Link href="/dashboard">
           <Button>Back to Courses</Button>
         </Link>
       </div>
@@ -61,7 +61,7 @@ export default function ManageCoursePage() {
   return (
     <div className="max-w-[1800px] mx-auto">
       {/* <div className="mb-6 flex items-center gap-4">
-        <Link href="/dashboard/courses">
+        <Link href="/dashboard">
           <Button variant="ghost">Back</Button>
         </Link>
         <h1 className="text-2xl font-bold">Manage Course</h1>
