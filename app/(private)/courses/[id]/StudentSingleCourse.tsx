@@ -26,10 +26,20 @@ export default function StudentSingleCourse({
   const [enrollment, setEnrollment] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  // --- Progress & certificate state ---
+  // Keyed by lesson_id: { is_completed: boolean }
+  const [lessonProgress, setLessonProgress] = useState<
+    Record<string, { is_completed: boolean }>
+  >({});
+  const [certificate, setCertificate] = useState<any | null>(null);
+  const [isCourseCompleted, setIsCourseCompleted] = useState(false);
+
   // --- Signed video URL logic ---
   const [signedVideoUrl, setSignedVideoUrl] = useState<string>("");
   const [signedUrlExpiry, setSignedUrlExpiry] = useState<number>(0);
-  const [lastLessonId, setLastLessonId] = useState<string | undefined>(undefined);
+  const [lastLessonId, setLastLessonId] = useState<string | undefined>(
+    undefined
+  );
 
   const isEnrolled = !!enrollment;
   // Get all lessons
@@ -40,7 +50,6 @@ export default function StudentSingleCourse({
   // Compute current lesson from URL or default to first lesson
   const currentLesson = useMemo(() => {
     if (!allLessons.length) return undefined;
-    // If lessonIdFromUrl is not found, fallback to first lesson
     return lessonIdFromUrl
       ? allLessons.find((l: any) => l.id === lessonIdFromUrl) || allLessons[0]
       : allLessons[0];
@@ -48,7 +57,6 @@ export default function StudentSingleCourse({
 
   // Helper to extract S3 key from video_url
   function extractS3Key(videoUrl: string) {
-    // Example: https://bril-course-media.s3.ap-south-1.amazonaws.com/videos/1770101885147-xxx.mp4
     const match = videoUrl.match(/s3\.ap-south-1\.amazonaws\.com\/(.+)$/);
     return match ? match[1] : "";
   }
@@ -61,7 +69,6 @@ export default function StudentSingleCourse({
       setLastLessonId(undefined);
       return;
     }
-    // Only refetch if lesson changed or URL expired
     if (
       lastLessonId === currentLesson.id &&
       signedVideoUrl &&
@@ -86,22 +93,107 @@ export default function StudentSingleCourse({
         setSignedUrlExpiry(Date.now() + 60 * 60 * 1000); // 1 hour expiry
         setLastLessonId(currentLesson.id);
       });
-  }, [currentLesson?.video_url, currentLesson?.id, lastLessonId, signedVideoUrl, signedUrlExpiry]);
+  }, [
+    currentLesson?.video_url,
+    currentLesson?.id,
+    lastLessonId,
+    signedVideoUrl,
+    signedUrlExpiry,
+  ]);
 
+  // -------------------------------------------------------
+  // Record lesson "open" event whenever the active lesson changes
+  // -------------------------------------------------------
+  useEffect(() => {
+    if (!currentLesson?.id || !user?.id || !id) return;
 
-  // Handler to change lesson (updates URL)
-  // Memoized handler to avoid unnecessary rerenders
+    fetch("/api/student/progress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        studentId: user.id,
+        courseId: id,
+        lessonId: currentLesson.id,
+        sectionId: currentLesson.section_id || null,
+        action: "open",
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.progress) {
+          setLessonProgress((prev) => ({
+            ...prev,
+            [currentLesson.id]: {
+              is_completed: data.progress.is_completed,
+            },
+          }));
+        }
+      })
+      .catch(() => {});
+  }, [currentLesson?.id, user?.id, id]);
+
+  // -------------------------------------------------------
+  // Handler: mark current lesson as complete
+  // -------------------------------------------------------
+  const handleMarkComplete = useCallback(
+    async (lessonId: string) => {
+      if (!user?.id || !id) return;
+
+      const res = await fetch("/api/student/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: user.id,
+          courseId: id,
+          lessonId,
+          sectionId:
+            allLessons.find((l: any) => l.id === lessonId)?.section_id ||
+            null,
+          action: "complete",
+        }),
+      });
+      const data = await res.json();
+
+      if (data.progress) {
+        setLessonProgress((prev) => ({
+          ...prev,
+          [lessonId]: { is_completed: true },
+        }));
+      }
+
+      if (data.isCourseCompleted) {
+        setIsCourseCompleted(true);
+        // Auto-issue certificate
+        fetch("/api/student/certificates", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ studentId: user.id, courseId: id }),
+        })
+          .then((r) => r.json())
+          .then((certData) => {
+            if (certData.certificate) {
+              setCertificate(certData.certificate);
+            }
+          })
+          .catch(() => {});
+      }
+    },
+    [user?.id, id, allLessons]
+  );
+
+  // -------------------------------------------------------
+  // Handler: lesson change via sidebar
+  // -------------------------------------------------------
   const handleLessonChange = useCallback(
     (lessonId: string) => {
       const params = new URLSearchParams(urlSearchParams?.toString() || "");
       params.set("lesson", lessonId);
       router.replace(`?${params.toString()}`, { scroll: false });
-      // No need to set state, as currentLesson is derived from URL
     },
     [router, urlSearchParams]
   );
 
-  // Guard clause: don't render or fetch if id is not available
+  // Guard clause
   if (!id) {
     return (
       <div className="h-full w-full flex justify-center items-center">
@@ -110,20 +202,59 @@ export default function StudentSingleCourse({
     );
   }
 
+  // -------------------------------------------------------
+  // Fetch course + progress + certificate on mount
+  // -------------------------------------------------------
   useEffect(() => {
-    // Only fetch if user and id are available
     if (!user || !id) return;
     setLoading(true);
-    fetch(`/api/student/courses?courseId=${id}&studentId=${user.id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setCourse(data);
-        setSections(data.sections || []);
-        setEnrollment(data.enrollment);
-        setLoading(false);
+
+    // Parallel fetch: course data + lesson progress + existing certificate
+    Promise.all([
+      fetch(`/api/student/courses?courseId=${id}&studentId=${user.id}`).then(
+        (r) => r.json()
+      ),
+      fetch(
+        `/api/student/progress?studentId=${user.id}&courseId=${id}`
+      ).then((r) => r.json()),
+      fetch(
+        `/api/student/certificates?studentId=${user.id}&courseId=${id}`
+      ).then((r) => r.json()),
+    ])
+      .then(([courseData, progressData, certData]) => {
+        setCourse(courseData);
+        setSections(courseData.sections || []);
+        setEnrollment(courseData.enrollment);
+
+        // Build progress map from DB
+        const progressMap: Record<string, { is_completed: boolean }> = {};
+        for (const row of progressData?.progress || []) {
+          progressMap[row.lesson_id] = { is_completed: row.is_completed };
+        }
+        setLessonProgress(progressMap);
+
+        // Certificate
+        if (certData?.certificate) {
+          setCertificate(certData.certificate);
+          setIsCourseCompleted(true);
+        } else {
+          // Compute course completion from progress
+          const allLessonsFlat = (courseData.sections || []).flatMap(
+            (s: any) => s.lessons || []
+          );
+          const total = allLessonsFlat.length;
+          const completed = Object.values(progressMap).filter(
+            (p) => p.is_completed
+          ).length;
+          if (total > 0 && completed >= total) {
+            setIsCourseCompleted(true);
+          }
+        }
       })
-      .catch(() => setLoading(false));
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, [id, user]);
+
   if (loading || !user || !id) {
     return (
       <div className="h-full w-full flex justify-center items-center">
@@ -132,9 +263,9 @@ export default function StudentSingleCourse({
     );
   }
 
-  // compute total duration (seconds) and formatter
   const totalDurationSeconds =
-    allLessons?.reduce((acc: number, l: any) => acc + (l?.duration || 0), 0) || 0;
+    allLessons?.reduce((acc: number, l: any) => acc + (l?.duration || 0), 0) ||
+    0;
 
   const formatDuration = (secs: number) => {
     if (!secs) return "0:00";
@@ -142,8 +273,6 @@ export default function StudentSingleCourse({
     const s = Math.floor(secs % 60);
     return `${m}:${String(s).padStart(2, "0")}`;
   };
-
-
 
   // If student and not enrolled, show enrollment option
   if (user?.role === "student" && !isEnrolled) {
@@ -170,7 +299,12 @@ export default function StudentSingleCourse({
       signedVideoUrl={signedVideoUrl}
       sections={sections}
       setLessonId={handleLessonChange}
+      lessonProgress={lessonProgress}
+      isCourseCompleted={isCourseCompleted}
+      certificate={certificate}
+      studentId={user.id}
+      onMarkComplete={handleMarkComplete}
+      onCertificateIssued={(cert) => setCertificate(cert)}
     />
   );
 }
-

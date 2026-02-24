@@ -7,12 +7,12 @@ CREATE TABLE public.aws_assets (
   asset_key text NOT NULL,
   file_name text NOT NULL,
   file_type text NOT NULL,
-  category text NOT NULL,
   size bigint,
   uploaded_by uuid,
   related_lesson_id uuid,
   related_course_id uuid,
   created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  mime_type text,
   CONSTRAINT aws_assets_pkey PRIMARY KEY (id),
   CONSTRAINT aws_assets_lesson_fkey FOREIGN KEY (related_lesson_id) REFERENCES public.lessons(id),
   CONSTRAINT aws_assets_course_fkey FOREIGN KEY (related_course_id) REFERENCES public.courses(id),
@@ -32,6 +32,23 @@ CREATE TABLE public.course_announcements (
   CONSTRAINT course_announcements_pkey PRIMARY KEY (id),
   CONSTRAINT course_announcements_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id),
   CONSTRAINT course_announcements_instructor_id_fkey FOREIGN KEY (instructor_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.course_certificates (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  certificate_number text NOT NULL UNIQUE,
+  student_id uuid NOT NULL,
+  course_id uuid NOT NULL,
+  student_name text NOT NULL,
+  course_name text NOT NULL,
+  instructor_name text,
+  organization_name text,
+  issued_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  expires_at timestamp with time zone,
+  total_lessons integer NOT NULL DEFAULT 0,
+  total_hours numeric DEFAULT 0,
+  CONSTRAINT course_certificates_pkey PRIMARY KEY (id),
+  CONSTRAINT course_certificates_student_fkey FOREIGN KEY (student_id) REFERENCES public.users(id),
+  CONSTRAINT course_certificates_course_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id)
 );
 CREATE TABLE public.course_discussion_replies (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -133,7 +150,7 @@ CREATE TABLE public.courses (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   title text NOT NULL,
   description text,
-  instructor_id uuid NOT NULL,
+  instructor_id uuid,
   is_active boolean DEFAULT true,
   created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
   thumbnail_url text,
@@ -154,8 +171,8 @@ CREATE TABLE public.courses (
   requirements text,
   expectations text,
   CONSTRAINT courses_pkey PRIMARY KEY (id),
-  CONSTRAINT courses_instructor_id_fkey FOREIGN KEY (instructor_id) REFERENCES public.users(id),
-  CONSTRAINT courses_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id)
+  CONSTRAINT courses_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id),
+  CONSTRAINT courses_instructor_id_fkey FOREIGN KEY (instructor_id) REFERENCES public.users(id)
 );
 CREATE TABLE public.enrollments (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -163,8 +180,24 @@ CREATE TABLE public.enrollments (
   course_id uuid NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
   CONSTRAINT enrollments_pkey PRIMARY KEY (id),
-  CONSTRAINT enrollments_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id),
-  CONSTRAINT enrollments_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.users(id)
+  CONSTRAINT enrollments_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.users(id),
+  CONSTRAINT enrollments_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id)
+);
+CREATE TABLE public.lesson_progress (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  student_id uuid NOT NULL,
+  course_id uuid NOT NULL,
+  lesson_id uuid NOT NULL,
+  section_id uuid,
+  is_completed boolean NOT NULL DEFAULT false,
+  opened_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  completed_at timestamp with time zone,
+  watch_duration integer DEFAULT 0,
+  CONSTRAINT lesson_progress_pkey PRIMARY KEY (id),
+  CONSTRAINT lesson_progress_student_fkey FOREIGN KEY (student_id) REFERENCES public.users(id),
+  CONSTRAINT lesson_progress_course_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id),
+  CONSTRAINT lesson_progress_lesson_fkey FOREIGN KEY (lesson_id) REFERENCES public.lessons(id),
+  CONSTRAINT lesson_progress_section_fkey FOREIGN KEY (section_id) REFERENCES public.course_sections(id)
 );
 CREATE TABLE public.lessons (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -180,9 +213,9 @@ CREATE TABLE public.lessons (
   aws_asset_key text,
   aws_assets_data_id uuid,
   CONSTRAINT lessons_pkey PRIMARY KEY (id),
-  CONSTRAINT lessons_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id),
   CONSTRAINT lessons_section_id_fkey FOREIGN KEY (section_id) REFERENCES public.course_sections(id),
-  CONSTRAINT lessons_aws_assets_data_id_fkey FOREIGN KEY (aws_assets_data_id) REFERENCES public.aws_assets(id)
+  CONSTRAINT lessons_aws_assets_data_id_fkey FOREIGN KEY (aws_assets_data_id) REFERENCES public.aws_assets(id),
+  CONSTRAINT lessons_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id)
 );
 CREATE TABLE public.organizations (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -233,6 +266,6 @@ CREATE TABLE public.users (
   organization_id uuid,
   is_verified boolean,
   CONSTRAINT users_pkey PRIMARY KEY (id),
-  CONSTRAINT users_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id),
-  CONSTRAINT users_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id)
+  CONSTRAINT users_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id),
+  CONSTRAINT users_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );

@@ -34,14 +34,14 @@ export default function AdminSingleCourse({ id }: { id: string }) {
         });
         const res = await fetch(`/api/admin/courses?${params.toString()}`);
         if (!res.ok) {
-          router.replace("/dashboard/courses");
+          router.replace("/dashboard");
           return;
         }
         const data = await res.json();
         setCourse(data);
         setSections(data.sections || []);
       } catch {
-        router.replace("/dashboard/courses");
+        router.replace("/dashboard");
       }
     };
     fetchCourseAndSections();
@@ -57,13 +57,16 @@ export default function AdminSingleCourse({ id }: { id: string }) {
 
   // Helpers
   const allLessons = sections.flatMap((s: any) => s.lessons || []);
-  const totalDuration = allLessons.reduce((acc, l) => acc + (l.duration || 0), 0);
+  const totalDuration = allLessons.reduce(
+    (acc, l) => acc + (l.duration || 0),
+    0,
+  );
   const totalLectures = allLessons.length;
 
   // Accordion for sections/lessons (view-only, no add/delete)
   function CurriculumAccordion({ sections }: { sections: any[] }) {
     const [openSections, setOpenSections] = useState<string[]>(() =>
-      sections.map((s: any) => s.id)
+      sections.map((s: any) => s.id),
     );
     useEffect(() => {
       setOpenSections(sections.map((s: any) => s.id));
@@ -138,7 +141,7 @@ export default function AdminSingleCourse({ id }: { id: string }) {
       <div className="bg-accent/60 mx-auto p-6 rounded-b-2xl shadow-sm border-b">
         <div className="max-w-7xl mx-auto relative">
           <Link
-            href="/dashboard/courses"
+            href="/dashboard"
             className="text-primary hover:underline mb-4 inline-flex items-center gap-1"
           >
             {/* Add a left arrow for better UX */}
@@ -165,9 +168,7 @@ export default function AdminSingleCourse({ id }: { id: string }) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  router.push(`/dashboard/courses/manage/${course.id}`)
-                }
+                onClick={() => router.push(`/dashboard/manage/${course.id}`)}
                 className="ml-2"
               >
                 <Pencil className="h-5 w-5 mr-2" /> Edit Course
