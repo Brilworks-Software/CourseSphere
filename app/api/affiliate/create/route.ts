@@ -23,6 +23,24 @@ export async function POST(req: Request) {
 
     const supabase = await createClient();
 
+    // First, validate that the user exists and is a student
+    const { data: user, error: userError } = await supabase
+      .from("users")
+      .select("id, role")
+      .eq("id", userId)
+      .single();
+
+    if (userError || !user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    if (user.role !== "student") {
+      return NextResponse.json(
+        { error: "Only students can join the affiliate program" },
+        { status: 403 },
+      );
+    }
+
     // Check if user already has an affiliate profile
     const { data: existingProfile } = await supabase
       .from("affiliate_profiles")

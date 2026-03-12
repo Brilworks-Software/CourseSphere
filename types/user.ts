@@ -12,6 +12,9 @@ export interface AffiliateProfile {
   id: string;
   referral_code: string;
   is_active: boolean;
+  commission_rate?: number;
+  total_sales?: number;
+  total_earnings?: number;
 }
 
 export interface User {

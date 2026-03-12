@@ -29,7 +29,9 @@ export async function GET(request: NextRequest) {
   // Check if user has an affiliate profile
   const { data: affiliateProfile } = await supabase
     .from("affiliate_profiles")
-    .select("id, referral_code, is_active")
+    .select(
+      "id, referral_code, is_active, commission_rate, total_sales, total_earnings",
+    )
     .eq("user_id", userId)
     .single();
 

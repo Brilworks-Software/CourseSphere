@@ -32,16 +32,16 @@ export default function AffiliateMain() {
         return;
       }
 
-      // First check if we already have affiliate status from user context
+      // Check if we already have affiliate status from user context
       if (user.is_affiliate !== undefined) {
         setIsAffiliate(user.is_affiliate);
         if (user.is_affiliate && user.affiliate_profile) {
           setAffiliateProfile({
             id: user.affiliate_profile.id,
             referralCode: user.affiliate_profile.referral_code,
-            commissionRate: 20, // Default value
-            totalSales: 0,
-            totalEarnings: 0,
+            commissionRate: user.affiliate_profile.commission_rate || 20,
+            totalSales: user.affiliate_profile.total_sales || 0,
+            totalEarnings: user.affiliate_profile.total_earnings || 0,
             isActive: user.affiliate_profile.is_active,
             createdAt: new Date().toISOString(),
           });
@@ -78,7 +78,7 @@ export default function AffiliateMain() {
     };
 
     checkAffiliateStatus();
-  }, [user?.id, user?.is_affiliate]);
+  }, [user?.id, user?.is_affiliate, user?.affiliate_profile]);
 
   const handleAffiliateSignupSuccess = async () => {
     // Refetch user data to update affiliate status
@@ -114,6 +114,21 @@ export default function AffiliateMain() {
           <h2 className="text-2xl font-bold mb-4">Please log in</h2>
           <p className="text-muted-foreground">
             You need to be logged in to access the affiliate program.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Only students can join the affiliate program
+  if (user.role !== "student") {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Access Restricted</h2>
+          <p className="text-muted-foreground">
+            The affiliate program is only available for students. Your current
+            role is: {user.role || "unknown"}
           </p>
         </div>
       </div>
