@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function PATCH(
   request: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await context.params;
@@ -11,31 +11,35 @@ export async function PATCH(
 
     const body = await request.json();
 
-    // Build updateFields from all possible fields in the body, matching DB schema
-    const updateFields: any = {
-      title: body.title,
-      subtitle: body.subtitle ?? null,
-      description: body.description ?? null,
-      language: body.language ?? null,
-      level: body.level ?? null,
-      is_active: body.is_active,
-      thumbnail_url: body.thumbnail_url ?? null,
-      primary_category: body.primary_category ?? null,
-      sub_category: body.sub_category ?? null,
-      status: body.status ?? null,
-      last_submitted_at: body.last_submitted_at ?? null,
-      published_at: body.published_at ?? null,
-      is_free: body.is_free,
-      price: body.price,
-      razorpay_connected: body.razorpay_connected ?? false,
-      razorpay_key: body.razorpay_key ?? null,
-      organization_id: body.organization_id ?? null,
-      instructor_id: body.instructor_id ?? null,
-      requirements: body.requirements ?? null,
-      expectations: body.expectations ?? null,              
-    };
-
-    console.log("PATCH updateFields:", updateFields);
+    // Only update fields that are present in the request body
+    const allowedFields = [
+      "title",
+      "subtitle",
+      "description",
+      "language",
+      "level",
+      "is_active",
+      "thumbnail_url",
+      "primary_category",
+      "sub_category",
+      "status",
+      "last_submitted_at",
+      "published_at",
+      "is_free",
+      "price",
+      "razorpay_connected",
+      "razorpay_key",
+      "organization_id",
+      "instructor_id",
+      "requirements",
+      "expectations",
+    ];
+    const updateFields: any = {};
+    for (const key of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(body, key)) {
+        updateFields[key] = body[key];
+      }
+    }
 
     const { error: updateError } = await supabase
       .from("courses")
@@ -43,7 +47,6 @@ export async function PATCH(
       .eq("id", id);
 
     if (updateError) {
-      console.log("PATCH error:", updateError);
       return NextResponse.json({ error: updateError.message }, { status: 400 });
     }
 
@@ -56,7 +59,7 @@ export async function PATCH(
           id, name, slug, logo_url, thumbnail_url
         ),
         lessons:lessons(count)
-      `
+      `,
       )
       .eq("id", id)
       .single();
@@ -64,21 +67,19 @@ export async function PATCH(
     if (refetchError) {
       return NextResponse.json(
         { error: refetchError.message },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    console.log("PATCH success, data:", updatedCourse);
     return NextResponse.json(updatedCourse);
   } catch (error: any) {
-    console.log("PATCH exception:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
 export async function GET(
   request: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await context.params;
@@ -93,7 +94,7 @@ export async function GET(
           id, name, slug, logo_url, thumbnail_url
         ),
         lessons:lessons(count)
-      `
+      `,
       )
       .eq("id", id)
       .single();

@@ -1,6 +1,65 @@
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
 
+CREATE TABLE public.affiliate_clicks (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  affiliate_id uuid NOT NULL,
+  course_id uuid,
+  referral_code text,
+  ip_address text,
+  user_agent text,
+  clicked_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT affiliate_clicks_pkey PRIMARY KEY (id),
+  CONSTRAINT affiliate_clicks_affiliate_fkey FOREIGN KEY (affiliate_id) REFERENCES public.affiliate_profiles(id)
+);
+CREATE TABLE public.affiliate_commissions (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  affiliate_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  course_id uuid NOT NULL,
+  order_id uuid NOT NULL,
+  coupon_id uuid,
+  commission_rate numeric NOT NULL,
+  commission_amount bigint NOT NULL,
+  status text DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'approved'::text, 'paid'::text, 'rejected'::text])),
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT affiliate_commissions_pkey PRIMARY KEY (id),
+  CONSTRAINT affiliate_commissions_affiliate_fkey FOREIGN KEY (affiliate_id) REFERENCES public.affiliate_profiles(id),
+  CONSTRAINT affiliate_commissions_coupon_fkey FOREIGN KEY (coupon_id) REFERENCES public.coupons(id)
+);
+CREATE TABLE public.affiliate_links (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  affiliate_id uuid NOT NULL,
+  course_id uuid NOT NULL,
+  referral_code text NOT NULL,
+  click_count integer DEFAULT 0,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT affiliate_links_pkey PRIMARY KEY (id),
+  CONSTRAINT affiliate_links_affiliate_fkey FOREIGN KEY (affiliate_id) REFERENCES public.affiliate_profiles(id),
+  CONSTRAINT affiliate_links_course_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id)
+);
+CREATE TABLE public.affiliate_profiles (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  user_id uuid NOT NULL UNIQUE,
+  referral_code text NOT NULL UNIQUE,
+  commission_rate numeric DEFAULT 20,
+  total_sales integer DEFAULT 0,
+  total_earnings bigint DEFAULT 0,
+  is_active boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT affiliate_profiles_pkey PRIMARY KEY (id),
+  CONSTRAINT affiliate_profiles_user_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.affiliate_withdrawals (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  affiliate_id uuid NOT NULL,
+  amount bigint NOT NULL,
+  status text DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'processing'::text, 'paid'::text, 'rejected'::text])),
+  requested_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  processed_at timestamp with time zone,
+  CONSTRAINT affiliate_withdrawals_pkey PRIMARY KEY (id),
+  CONSTRAINT affiliate_withdrawals_affiliate_fkey FOREIGN KEY (affiliate_id) REFERENCES public.affiliate_profiles(id)
+);
 CREATE TABLE public.aws_assets (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   bucket_name text NOT NULL,
@@ -17,6 +76,41 @@ CREATE TABLE public.aws_assets (
   CONSTRAINT aws_assets_lesson_fkey FOREIGN KEY (related_lesson_id) REFERENCES public.lessons(id),
   CONSTRAINT aws_assets_course_fkey FOREIGN KEY (related_course_id) REFERENCES public.courses(id),
   CONSTRAINT aws_assets_uploaded_by_fkey FOREIGN KEY (uploaded_by) REFERENCES public.users(id)
+);
+CREATE TABLE public.coupon_redemptions (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  coupon_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  course_id uuid NOT NULL,
+  order_id uuid,
+  discount_amount bigint NOT NULL,
+  redeemed_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT coupon_redemptions_pkey PRIMARY KEY (id),
+  CONSTRAINT coupon_redemptions_coupon_fkey FOREIGN KEY (coupon_id) REFERENCES public.coupons(id),
+  CONSTRAINT coupon_redemptions_user_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT coupon_redemptions_course_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id)
+);
+CREATE TABLE public.coupons (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  code text NOT NULL UNIQUE,
+  course_id uuid,
+  affiliate_id uuid,
+  discount_type text NOT NULL CHECK (discount_type = ANY (ARRAY['percentage'::text, 'fixed'::text])),
+  discount_value numeric NOT NULL,
+  min_purchase_amount bigint DEFAULT 0,
+  max_discount_amount bigint,
+  max_uses integer,
+  used_count integer DEFAULT 0,
+  max_uses_per_user integer DEFAULT 1,
+  valid_from timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  valid_until timestamp with time zone,
+  is_active boolean DEFAULT true,
+  created_by uuid,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT coupons_pkey PRIMARY KEY (id),
+  CONSTRAINT coupons_course_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id),
+  CONSTRAINT coupons_affiliate_fkey FOREIGN KEY (affiliate_id) REFERENCES public.affiliate_profiles(id),
+  CONSTRAINT coupons_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id)
 );
 CREATE TABLE public.course_announcements (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -89,16 +183,6 @@ CREATE TABLE public.course_discussion_threads (
   CONSTRAINT course_discussion_threads_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
   CONSTRAINT course_discussion_threads_announcement_id_fkey FOREIGN KEY (announcement_id) REFERENCES public.course_announcements(id)
 );
-CREATE TABLE public.course_discussion_votes (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
-  reply_id uuid NOT NULL,
-  user_id uuid NOT NULL,
-  vote smallint NOT NULL CHECK (vote = ANY (ARRAY[1, '-1'::integer])),
-  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
-  CONSTRAINT course_discussion_votes_pkey PRIMARY KEY (id),
-  CONSTRAINT course_discussion_votes_reply_id_fkey FOREIGN KEY (reply_id) REFERENCES public.course_discussion_replies(id),
-  CONSTRAINT course_discussion_votes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
-);
 CREATE TABLE public.course_live_streams (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   course_id uuid NOT NULL,
@@ -123,18 +207,17 @@ CREATE TABLE public.course_live_streams (
   CONSTRAINT course_live_streams_discussion_thread_id_fkey FOREIGN KEY (discussion_thread_id) REFERENCES public.course_discussion_threads(id),
   CONSTRAINT course_live_streams_recording_lesson_id_fkey FOREIGN KEY (recording_lesson_id) REFERENCES public.lessons(id)
 );
-CREATE TABLE public.course_rating_stats (
+CREATE TABLE public.course_purchases (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  user_id uuid NOT NULL,
   course_id uuid NOT NULL,
-  avg_rating numeric DEFAULT 0,
-  total_reviews integer DEFAULT 0,
-  rating_1 integer DEFAULT 0,
-  rating_2 integer DEFAULT 0,
-  rating_3 integer DEFAULT 0,
-  rating_4 integer DEFAULT 0,
-  rating_5 integer DEFAULT 0,
-  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
-  CONSTRAINT course_rating_stats_pkey PRIMARY KEY (course_id),
-  CONSTRAINT course_rating_stats_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id)
+  transaction_id uuid NOT NULL,
+  purchase_price bigint NOT NULL,
+  purchased_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT course_purchases_pkey PRIMARY KEY (id),
+  CONSTRAINT course_purchases_user_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT course_purchases_course_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id),
+  CONSTRAINT course_purchases_transaction_fkey FOREIGN KEY (transaction_id) REFERENCES public.payment_transactions(id)
 );
 CREATE TABLE public.course_sections (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -161,7 +244,7 @@ CREATE TABLE public.courses (
   price bigint NOT NULL DEFAULT '0'::bigint,
   subtitle text,
   language text DEFAULT 'en'::text,
-  level text CHECK (level = ANY (ARRAY['beginner'::text, 'intermediate'::text, 'advanced'::text, 'all_levels'::text])),
+  level text DEFAULT 'beginner'::text CHECK (level = ANY (ARRAY['beginner'::text, 'intermediate'::text, 'advanced'::text, 'all_levels'::text])),
   status text DEFAULT 'draft'::text CHECK (status = ANY (ARRAY['draft'::text, 'in_review'::text, 'published'::text, 'rejected'::text])),
   seo_keywords ARRAY,
   last_submitted_at timestamp with time zone,
@@ -232,6 +315,44 @@ CREATE TABLE public.organizations (
   sub_category ARRAY,
   CONSTRAINT organizations_pkey PRIMARY KEY (id),
   CONSTRAINT organizations_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.payment_orders (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  user_id uuid NOT NULL,
+  course_id uuid NOT NULL,
+  razorpay_order_id text NOT NULL UNIQUE,
+  amount bigint NOT NULL,
+  currency text DEFAULT 'INR'::text,
+  status text DEFAULT 'created'::text CHECK (status = ANY (ARRAY['created'::text, 'paid'::text, 'failed'::text, 'cancelled'::text])),
+  receipt text,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  coupon_id uuid,
+  affiliate_id uuid,
+  CONSTRAINT payment_orders_pkey PRIMARY KEY (id),
+  CONSTRAINT payment_orders_user_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT payment_orders_course_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id),
+  CONSTRAINT payment_orders_coupon_fkey FOREIGN KEY (coupon_id) REFERENCES public.coupons(id),
+  CONSTRAINT payment_orders_affiliate_fkey FOREIGN KEY (affiliate_id) REFERENCES public.affiliate_profiles(id)
+);
+CREATE TABLE public.payment_transactions (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  order_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  course_id uuid NOT NULL,
+  razorpay_payment_id text NOT NULL UNIQUE,
+  razorpay_order_id text NOT NULL,
+  razorpay_signature text,
+  amount bigint NOT NULL,
+  currency text DEFAULT 'INR'::text,
+  payment_method text,
+  payment_status text DEFAULT 'success'::text CHECK (payment_status = ANY (ARRAY['success'::text, 'failed'::text, 'refunded'::text])),
+  paid_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT payment_transactions_pkey PRIMARY KEY (id),
+  CONSTRAINT payment_transactions_order_fkey FOREIGN KEY (order_id) REFERENCES public.payment_orders(id),
+  CONSTRAINT payment_transactions_user_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT payment_transactions_course_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id)
 );
 CREATE TABLE public.profiles (
   id uuid NOT NULL,

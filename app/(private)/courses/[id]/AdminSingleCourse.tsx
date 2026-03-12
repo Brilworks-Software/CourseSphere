@@ -168,7 +168,7 @@ export default function AdminSingleCourse({ id }: { id: string }) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => router.push(`/dashboard/manage/${course.id}`)}
+                onClick={() => router.push(`/dashboard/courses/manage/${course.id}`)}
                 className="ml-2"
               >
                 <Pencil className="h-5 w-5 mr-2" /> Edit Course

@@ -58,11 +58,17 @@ const Navbar = () => {
     { href: "/courses", label: "Courses" },
   ];
 
+  // Show admin-only links
   if (user?.role === "admin") {
     links.push(
       // { href: "/courses/new", label: "Create Course" },
       { href: "/organization", label: "Manage Organization" },
     );
+  }
+
+  // Make affiliate dashboard easily accessible for logged-in users
+  if (user) {
+    links.push({ href: "/dashboard/affiliate", label: "Affiliate" });
   }
 
   return (

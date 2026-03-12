@@ -160,7 +160,7 @@ export async function GET(request: Request) {
         .in("course_id", courseIds)
         .order("scheduled_start_at", { ascending: false });
       if (only_live) {
-        query = query.eq("status", "live");
+        query = query.eq("status", "test");
       }
 
       streamsResult = await query;
