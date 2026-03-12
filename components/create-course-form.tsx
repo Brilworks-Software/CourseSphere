@@ -22,6 +22,7 @@ import { useUserContext } from "@/app/provider/user-context";
 import { PlusCircle, Check, XIcon, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import Logo from "./logo";
+import HtmlPreview from "./html-preview";
 
 export function CreateCourseForm() {
   const { user } = useUserContext();
@@ -578,7 +579,8 @@ export function CreateCourseForm() {
                       <strong>Title:</strong> {title}
                     </div>
                     <div>
-                      <strong>Description:</strong> {description}
+                      <strong>Description:</strong> 
+                      <HtmlPreview html={description} />
                     </div>
                     <div>
                       <strong>Category:</strong> {primaryCategory} /{" "}
