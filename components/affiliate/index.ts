@@ -6,3 +6,4 @@ export {
 export { default as AffiliateSignup } from "./AffiliateSignup";
 export { default as AffiliateDashboard } from "./AffiliateDashboard";
 export { default as AffiliateUrlGenerator } from "./AffiliateUrlGenerator";
+export { default as AffiliateMain } from "./AffiliateMain";

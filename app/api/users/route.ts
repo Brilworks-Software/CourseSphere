@@ -8,22 +8,39 @@ export async function GET(request: NextRequest) {
   if (!userId) {
     return NextResponse.json(
       { user: null, error: "Missing user id" },
-      { status: 400 }
+      { status: 400 },
     );
   }
+
   // Fetch user from Supabase users table
   const { data: user, error } = await supabase
     .from("users")
     .select("*")
     .eq("id", userId)
     .single();
+
   if (error || !user) {
     return NextResponse.json(
       { user: null, error: error?.message || "User not found" },
-      { status: 404 }
+      { status: 404 },
     );
   }
-  return NextResponse.json({ user }, { status: 200 });
+
+  // Check if user has an affiliate profile
+  const { data: affiliateProfile } = await supabase
+    .from("affiliate_profiles")
+    .select("id, referral_code, is_active")
+    .eq("user_id", userId)
+    .single();
+
+  // Add affiliate information to user object
+  const userWithAffiliate = {
+    ...user,
+    is_affiliate: !!affiliateProfile,
+    affiliate_profile: affiliateProfile,
+  };
+
+  return NextResponse.json({ user: userWithAffiliate }, { status: 200 });
 }
 
 export async function POST(request: NextRequest) {
@@ -41,7 +58,7 @@ export async function POST(request: NextRequest) {
       if (error || !user) {
         return NextResponse.json(
           { error: "Invalid credentials" },
-          { status: 401 }
+          { status: 401 },
         );
       }
       // Here you would set a cookie/session
@@ -58,7 +75,7 @@ export async function POST(request: NextRequest) {
       if (existing) {
         return NextResponse.json(
           { error: "User already exists" },
-          { status: 400 }
+          { status: 400 },
         );
       }
       const { data: user, error } = await supabase
@@ -69,7 +86,7 @@ export async function POST(request: NextRequest) {
       if (error) {
         return NextResponse.json(
           { error: "Registration failed" },
-          { status: 500 }
+          { status: 500 },
         );
       }
       // Here you would set a cookie/session
@@ -95,7 +112,7 @@ export async function PUT(request: NextRequest) {
     if (!userId || !schoolId || !role) {
       return NextResponse.json(
         { error: "Missing required fields: userId, schoolId, and role" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -104,7 +121,7 @@ export async function PUT(request: NextRequest) {
     if (!validRoles.includes(role)) {
       return NextResponse.json(
         { error: "Invalid role. Must be one of: student, teacher, admin" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -125,7 +142,7 @@ export async function PUT(request: NextRequest) {
       console.error("Error updating user profile:", error);
       return NextResponse.json(
         { error: "Failed to update user profile" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -134,13 +151,13 @@ export async function PUT(request: NextRequest) {
         message: "User profile updated successfully",
         user: data,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: any) {
     console.error("Update user API error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

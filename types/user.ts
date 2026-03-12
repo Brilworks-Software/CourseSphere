@@ -8,6 +8,12 @@ export type UserRole =
   | string
   | null;
 
+export interface AffiliateProfile {
+  id: string;
+  referral_code: string;
+  is_active: boolean;
+}
+
 export interface User {
   id: string;
   email?: string | null;
@@ -22,6 +28,8 @@ export interface User {
   is_verified?: boolean;
   deleted_at?: string | null;
   created_at?: string | null;
+  is_affiliate?: boolean;
+  affiliate_profile?: AffiliateProfile | null;
   [key: string]: any;
 }
 

@@ -15,8 +15,10 @@ import { useUserContext } from "@/app/provider/user-context";
 
 export default function AffiliateSignup({
   variant = "full",
+  onSignupSuccess,
 }: {
   variant?: "full" | "banner";
+  onSignupSuccess?: () => void;
 }) {
   const { user } = useUserContext();
   const [isAffiliate, setIsAffiliate] = useState<boolean | null>(null);
@@ -47,12 +49,14 @@ export default function AffiliateSignup({
         if (response.status === 409) {
           setReferralCode(data.referralCode);
           setSuccess(true);
+          onSignupSuccess?.();
         } else {
           throw new Error(data.error || "Failed to create affiliate profile");
         }
       } else {
         setReferralCode(data.profile.referralCode);
         setSuccess(true);
+        onSignupSuccess?.();
       }
     } catch (err: any) {
       setError(err.message);
