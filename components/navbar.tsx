@@ -73,11 +73,13 @@ const Navbar = () => {
     );
   }
 
-  // Show affiliate link - always show for logged-in users (signup or dashboard)
-  if (user) {
+  // Show affiliate link - only for students, with different labels based on status
+  if (user && user.role === "student") {
     links.push({
       href: "/affiliate",
-      label: user.is_affiliate ? "Affiliate Dashboard" : "Affiliate Program",
+      label: user.is_affiliate
+        ? "Affiliate Dashboard"
+        : "Join Affiliate Program",
     });
   }
 

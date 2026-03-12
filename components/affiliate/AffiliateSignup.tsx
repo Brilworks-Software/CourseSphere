@@ -50,6 +50,8 @@ export default function AffiliateSignup({
           setReferralCode(data.referralCode);
           setSuccess(true);
           onSignupSuccess?.();
+        } else if (response.status === 403) {
+          throw new Error("Only students can join the affiliate program");
         } else {
           throw new Error(data.error || "Failed to create affiliate profile");
         }
