@@ -11,6 +11,7 @@ import { PricingStep } from "./manage-course-form/PricingStep";
 import { CurriculumStep } from "./manage-course-form/CurriculumStep";
 import AnnouncementStep from "./manage-course-form/AnnouncementStep";
 import LiveStreamStep from "./manage-course-form/LiveStreamStep";
+import CouponStep from "./manage-course-form/CouponStep";
 
 export function ManageCourseForm({ course }: { course: Course }) {
   // Basic details
@@ -84,6 +85,7 @@ export function ManageCourseForm({ course }: { course: Course }) {
     "Live stream",
     "Details",
     "Announcements",
+    "Coupons",
   ];
 
   // Removed unused selectedCategory and COURSE_CATEGORIES from parent
@@ -294,6 +296,7 @@ export function ManageCourseForm({ course }: { course: Course }) {
                   />
                 </>
               )}
+              {step === 6 && <CouponStep courseId={course.id} />}
             </div>
           </div>
         </section>

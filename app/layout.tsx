@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Provider from "./provider/provider";
+import Script from "next/script";
+import { AffiliateProvider } from "@/components/providers/AffiliateProvider";
+import { Suspense } from "react";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -31,7 +34,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <Provider>{children}</Provider>
+        <Suspense fallback={null}>
+          <AffiliateProvider />
+        </Suspense>
+        <Provider>
+          {children}
+            <Script
+              src="https://checkout.razorpay.com/v1/checkout.js"
+              strategy="lazyOnload"
+            />
+        </Provider>
       </body>
     </html>
   );

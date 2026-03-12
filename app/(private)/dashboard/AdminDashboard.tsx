@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Video, Users } from "lucide-react";
+import { BookOpen, Video, Users, Ticket } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CourseCard } from "@/components/course-card";
@@ -22,6 +22,7 @@ export default function AdminDashboard() {
   const [coursesCount, setCoursesCount] = useState(0);
   const [videosCount, setVideosCount] = useState(0);
   const [enrollmentsCount, setEnrollmentsCount] = useState(0);
+  const [couponsUsedCount, setCouponsUsedCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -79,6 +80,17 @@ export default function AdminDashboard() {
       }
       setEnrollmentsCount(enrollmentsCount);
 
+      // Get coupons used for instructor's courses
+      let currentCouponsUsedCount = 0;
+      if (courseIds.length > 0) {
+        const { count } = await supabase
+          .from("coupon_redemptions")
+          .select("*", { count: "exact", head: true })
+          .in("course_id", courseIds);
+        currentCouponsUsedCount = count || 0;
+      }
+      setCouponsUsedCount(currentCouponsUsedCount);
+
       setLoading(false);
     };
 
@@ -100,6 +112,11 @@ export default function AdminDashboard() {
       name: "Total Enrollments",
       value: enrollmentsCount,
       icon: Users,
+    },
+    {
+      name: "Coupons Used",
+      value: couponsUsedCount,
+      icon: Ticket,
     },
   ];
 
@@ -194,7 +211,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Grid (no Card wrapper per-item) */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <div
             key={stat.name}

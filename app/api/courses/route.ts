@@ -46,13 +46,33 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
 
+    // If no userId provided, return all published courses for affiliate URL generation
     if (!userId) {
-      return NextResponse.json(
-        { error: "Missing or invalid userId" },
-        { status: 400 }
-      );
+      const { data, error } = await supabase
+        .from("courses")
+        .select(
+          `
+          id,
+          title,
+          price,
+          thumbnail_url,
+          instructor_id,
+          is_free,
+          status
+        `,
+        )
+        .eq("status", "published")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+
+      return NextResponse.json(data);
     }
 
+    // Original logic for when userId is provided
     const { data, error } = await supabase.from("courses").select("*");
     // .eq("student_id", userId); // Uncomment if you want to filter by instructor
     if (error) {
@@ -65,19 +85,16 @@ export async function GET(request: Request) {
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
   try {
     const supabase = await createClient();
     const body = await request.json();
     const id = params.id || body.id;
 
-    console.log("PATCH /api/courses/:id called");
-    console.log("params.id:", params.id);
-    console.log("body.id:", body.id);
-    console.log("PATCH body:", body);
-
     if (!id) {
-      console.log("No course id provided");
       return NextResponse.json({ error: "Missing course id" }, { status: 400 });
     }
 
@@ -103,8 +120,6 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       instructor_id: body.instructor_id ?? null,
     };
 
-    console.log("PATCH updateFields:", updateFields);
-
     const { data, error } = await supabase
       .from("courses")
       .update(updateFields)
@@ -113,14 +128,11 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       .single();
 
     if (error) {
-      console.log("PATCH error:", error);
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    console.log("PATCH success, data:", data);
     return NextResponse.json(data);
   } catch (error: any) {
-    console.log("PATCH exception:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

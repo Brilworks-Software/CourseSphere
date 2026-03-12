@@ -1,6 +1,7 @@
 import Link from "next/link";
 import EnrolledCoursesClient from "@/components/enrolled-courses-client";
 import StudentLiveList from "@/components/StudentLiveList";
+import AffiliateSignup from "@/components/affiliate/AffiliateSignup";
 
 export default function StudentDashboard() {
   return (
@@ -14,6 +15,11 @@ export default function StudentDashboard() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Affiliate banner / signup - placed prominently for students */}
+      <div className="">
+        <AffiliateSignup variant="banner" />
       </div>
 
       {/* Enrolled Courses (removed outer card; use admin-style articles) */}
