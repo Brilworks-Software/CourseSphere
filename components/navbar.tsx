@@ -85,7 +85,7 @@ const Navbar = () => {
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-background/95 supports-backdrop-filter:backdrop-blur-sm shadow-sm">
-      <div className="max-w-425 mx-auto py-2 px-4 sm:px-6 lg:px-10">
+      <div className="max-w-[1800px] mx-auto py-2 px-4 sm:px-6 lg:px-10">
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}
           <div className="flex items-center">
