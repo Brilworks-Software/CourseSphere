@@ -282,6 +282,14 @@ CREATE TABLE public.lesson_progress (
   CONSTRAINT lesson_progress_lesson_fkey FOREIGN KEY (lesson_id) REFERENCES public.lessons(id),
   CONSTRAINT lesson_progress_section_fkey FOREIGN KEY (section_id) REFERENCES public.course_sections(id)
 );
+CREATE TABLE public.lesson_transcripts (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  lesson_id uuid,
+  transcript_text text,
+  created_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT lesson_transcripts_pkey PRIMARY KEY (id),
+  CONSTRAINT lesson_transcripts_lesson_id_fkey FOREIGN KEY (lesson_id) REFERENCES public.lessons(id)
+);
 CREATE TABLE public.lessons (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   course_id uuid NOT NULL,
@@ -368,6 +376,17 @@ CREATE TABLE public.profiles (
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
   CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );
+CREATE TABLE public.transcript_embeddings (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  lesson_id uuid,
+  transcript_id uuid,
+  chunk_text text NOT NULL,
+  embedding USER-DEFINED,
+  created_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT transcript_embeddings_pkey PRIMARY KEY (id),
+  CONSTRAINT transcript_embeddings_lesson_fkey FOREIGN KEY (lesson_id) REFERENCES public.lessons(id),
+  CONSTRAINT transcript_embeddings_transcript_fkey FOREIGN KEY (transcript_id) REFERENCES public.lesson_transcripts(id)
+);
 CREATE TABLE public.users (
   id uuid NOT NULL,
   role text NOT NULL DEFAULT 'student'::text CHECK (role = ANY (ARRAY['super_admin'::text, 'admin'::text, 'student'::text])),
@@ -389,4 +408,19 @@ CREATE TABLE public.users (
   CONSTRAINT users_pkey PRIMARY KEY (id),
   CONSTRAINT users_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id),
   CONSTRAINT users_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.video_transcription_jobs (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  aws_asset_id uuid NOT NULL,
+  lesson_id uuid,
+  course_id uuid,
+  status text NOT NULL DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'processing'::text, 'completed'::text, 'failed'::text])),
+  transcript_generated boolean DEFAULT false,
+  embedding_generated boolean DEFAULT false,
+  retry_count integer DEFAULT 0,
+  error_message text,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT video_transcription_jobs_pkey PRIMARY KEY (id),
+  CONSTRAINT video_transcription_jobs_asset_fkey FOREIGN KEY (aws_asset_id) REFERENCES public.aws_assets(id)
 );

@@ -69,9 +69,7 @@ export async function POST(
     Bucket: process.env.AWS_S3_BUCKET!,
     Key: key,
     ContentType: fileType,
-    ...(category === "image" && {
-      ACL: "public-read",
-    }),
+    ACL: "public-read",
   });
 
   const uploadUrl = await getSignedUrl(s3, command, {
@@ -96,7 +94,7 @@ export async function POST(
           bucket_name: process.env.AWS_S3_BUCKET!,
           related_lesson_id: lessonId ?? null,
           related_course_id: courseId ?? null,
-          uploaded_by: userId ?? null, 
+          uploaded_by: userId ?? null,
         },
       ])
       .select("id")
@@ -105,6 +103,25 @@ export async function POST(
       console.error("Failed to upsert aws_assets:", error);
     } else {
       aws_asset_id = data?.id ?? null;
+    }
+    // If an aws asset was created for a video, enqueue a transcription job
+    if (aws_asset_id && category === "video") {
+      const { error: transcriptionError } = await supabase
+        .from("video_transcription_jobs")
+        .insert([
+          {
+            aws_asset_id,
+            lesson_id: lessonId ?? null,
+            course_id: courseId ?? null,
+            status: "pending",
+          },
+        ]);
+      if (transcriptionError) {
+        console.error(
+          "Failed to insert video_transcription_jobs:",
+          transcriptionError,
+        );
+      }
     }
   } catch (err) {
     console.error("Error inserting aws_assets:", err);
