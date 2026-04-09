@@ -12,6 +12,9 @@ export interface UploadRequestBody {
   lessonId?: string;
   courseId?: string;
   userId?: string;
+  // Optional client-provided metadata for validation
+  fileSize?: number; // bytes
+  duration?: number; // seconds
 }
 
 export interface UploadResponse {

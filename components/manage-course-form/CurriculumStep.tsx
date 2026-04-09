@@ -614,6 +614,22 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
                                   lessonId={lesson.id}
                                   courseId={courseId}
                                   userId={user?.id}
+                                  onError={(msg) =>
+                                    setVideoUploadState((prev) => ({
+                                      ...prev,
+                                      [lesson.id]: {
+                                        ...(prev[lesson.id] || {
+                                          show: true,
+                                          file: null,
+                                          uploading: false,
+                                          progress: 0,
+                                          error: null,
+                                          success: false,
+                                        }),
+                                        error: msg ?? null,
+                                      },
+                                    }))
+                                  }
                                   onUploaded={async (
                                     publicUrl: string,
                                     uploadUrl?: string,
@@ -696,32 +712,22 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
                                     Uploading...
                                   </div>
                                 )}
-                                {videoUploadState[lesson.id]?.error && (
-                                  <div className="mt-2 flex items-center gap-2 text-destructive text-sm">
-                                    <XCircle className="w-5 h-5" />
-                                    {videoUploadState[lesson.id]?.error}
-                                  </div>
-                                )}
                                 {videoUploadState[lesson.id]?.success && (
                                   <div className="mt-2 space-y-3">
                                     <div className="flex items-center gap-2 text-success text-sm">
                                       <CheckCircle2 className="w-5 h-5 text-primary" />
                                       Video uploaded and lesson updated!
                                     </div>
-                                    <div className="flex gap-2">
+                                    {/* <div className="flex gap-2">
                                       <EmbeddingGenerator
                                         lessonId={lesson.id}
                                         courseId={courseId}
                                         lessonName={lesson.title}
                                         showText={true}
                                       />
-                                    </div>
+                                    </div> */}
                                   </div>
                                 )}
-                                <div className="text-xs text-muted-foreground mt-2">
-                                  Note: All files should be at least 720p and
-                                  less than 4.0 GB.
-                                </div>
                               </div>
                             )}
                         </div>
@@ -769,11 +775,11 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
 
           {/* Generate Embeddings & Add Section Buttons */}
           <div className="flex gap-2 w-full">
-            <EmbeddingGenerator
+            {/* <EmbeddingGenerator
               courseId={courseId}
               courseName="Course"
               showText={true}
-            />
+            /> */}
             <Button
               variant="secondary"
               className="flex-1 flex items-center gap-2 py-6 text-lg "

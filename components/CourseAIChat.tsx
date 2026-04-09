@@ -39,14 +39,12 @@ interface CourseAIChatProps {
   courseId: string;
   courseTitle?: string;
   float?: boolean; // show as floating minimizable assistant
-  minimizedByDefault?: boolean; // if floating, start minimized
 }
 
 export function CourseAIChat({
   courseId,
   courseTitle,
-  float = false,
-  minimizedByDefault = false,
+  float = true,
 }: CourseAIChatProps) {
   const [hasTranscripts, setHasTranscripts] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
@@ -58,8 +56,8 @@ export function CourseAIChat({
     [],
   );
 
-  // Floating / minimizable state
-  const [open, setOpen] = useState<boolean>(() => !minimizedByDefault);
+  // Floating / minimizable state (default closed)
+  const [open, setOpen] = useState<boolean>(false);
   // Visibility for non-floating placement (allow close + reopen)
   const [visible, setVisible] = useState<boolean>(true);
 
@@ -380,6 +378,12 @@ export function CourseAIChat({
         )}
       </>
     );
+  }
+
+  // If transcript check finished and there are no transcripts,
+  // hide the entire AI assistant (including floating button).
+  if (!isChecking && !hasTranscripts) {
+    return null;
   }
 
   // Non-floating placement: allow collapsing to a small FAB

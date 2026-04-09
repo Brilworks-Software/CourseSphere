@@ -38,8 +38,21 @@ function toSnakeCase(str: string): string {
 export async function POST(
   req: NextRequest,
 ): Promise<NextResponse<UploadResponse>> {
-  const body = (await req.json()) as UploadRequestBody;
-  const { fileName, fileType, category, lessonId, courseId, userId } = body; // <-- add lessonId, courseId, userId
+  const body = (await req.json()) as UploadRequestBody & {
+    fileSize?: number;
+    duration?: number;
+  };
+
+  const {
+    fileName,
+    fileType,
+    category,
+    lessonId,
+    courseId,
+    userId,
+    fileSize,
+    duration,
+  } = body;
 
   if (!(category in ALLOWED_MIME_TYPES)) {
     return NextResponse.json({ message: "Unsupported category" } as any, {
@@ -52,6 +65,30 @@ export async function POST(
     return NextResponse.json({ message: "Unsupported file type" } as any, {
       status: 400,
     });
+  }
+
+  // Server-side validation for video limits
+  if (category === "video") {
+    const MAX_SIZE_BYTES = 200 * 1024 * 1024; // 200 MB
+    const MAX_DURATION_SEC = 30 * 60; // 30 minutes
+
+    if (typeof fileSize === "number" && fileSize > MAX_SIZE_BYTES) {
+      return NextResponse.json(
+        { message: "File too large (max 200 MB)" } as any,
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (typeof duration === "number" && duration > MAX_DURATION_SEC) {
+      return NextResponse.json(
+        { message: "Video duration exceeds 30 minutes" } as any,
+        {
+          status: 400,
+        },
+      );
+    }
   }
 
   // Convert fileName to snake_case for S3 key, but also keep original fileName in the key as requested

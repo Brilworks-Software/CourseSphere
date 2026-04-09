@@ -21,12 +21,14 @@ interface MediaUploaderProps {
   lessonId?: string; // <-- Add lessonId
   courseId?: string; // <-- Add courseId
   userId?: string; // <-- Add userId
+  onError?: (message?: string | null) => void;
 }
 
 // Dedicated VideoUploader component
 function VideoUploader({
   label,
   onUploaded,
+  onError,
   lessonId,
   courseId,
   userId,
@@ -39,6 +41,7 @@ function VideoUploader({
     duration?: number,
     aws_asset_id?: string,
   ) => void;
+  onError?: (message?: string | null) => void;
   lessonId?: string;
   courseId?: string;
   userId?: string;
@@ -59,20 +62,59 @@ function VideoUploader({
     setSuccess(false);
     setProgress(0);
     setDuration(undefined);
-    if (file) {
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-      // Extract duration using a temporary video element
-      const tempVideo = document.createElement("video");
-      tempVideo.preload = "metadata";
-      tempVideo.onloadedmetadata = function () {
-        window.URL.revokeObjectURL(tempVideo.src);
-        setDuration(
-          tempVideo.duration ? Math.floor(tempVideo.duration) : undefined,
-        );
-      };
-      tempVideo.src = URL.createObjectURL(file);
+    onError?.(null);
+    if (!file) return;
+
+    const MAX_SIZE_BYTES = 200 * 1024 * 1024; // 200 MB
+    const MAX_DURATION_SEC = 30 * 60; // 30 minutes
+
+    // Size check
+    if (file.size > MAX_SIZE_BYTES) {
+      const msg = "File too large. Maximum allowed size is 200 MB.";
+      setError(msg);
+      onError?.(msg);
+      // clear input value so user can reselect
+      if (inputRef.current) inputRef.current.value = "";
+      return;
     }
+
+    // Extract duration using a temporary video element and validate
+    const tempUrl = URL.createObjectURL(file);
+    const tempVideo = document.createElement("video");
+    tempVideo.preload = "metadata";
+    tempVideo.onloadedmetadata = function () {
+      // revoke temporary url used only for metadata extraction
+      URL.revokeObjectURL(tempUrl);
+      const dur = tempVideo.duration
+        ? Math.floor(tempVideo.duration)
+        : undefined;
+      if (typeof dur === "number" && dur > MAX_DURATION_SEC) {
+        const msg = "Video exceeds maximum duration of 30 minutes.";
+        setError(msg);
+        onError?.(msg);
+        if (inputRef.current) inputRef.current.value = "";
+        setDuration(undefined);
+        setSelectedFile(null);
+        setPreviewUrl("");
+        return;
+      }
+
+      // All good — set states and create a preview URL
+      setDuration(dur);
+      setSelectedFile(file);
+      const preview = URL.createObjectURL(file);
+      setPreviewUrl(preview);
+    };
+
+    tempVideo.onerror = function () {
+      URL.revokeObjectURL(tempUrl);
+      const msg = "Unable to read video metadata. Please try another file.";
+      setError(msg);
+      onError?.(msg);
+      if (inputRef.current) inputRef.current.value = "";
+    };
+
+    tempVideo.src = tempUrl;
   };
 
   const handleUpload = async () => {
@@ -81,6 +123,7 @@ function VideoUploader({
     setError(null);
     setSuccess(false);
     setProgress(0);
+    onError?.(null);
 
     try {
       const res = await fetch("/api/s3/upload-url", {
@@ -92,11 +135,15 @@ function VideoUploader({
           lessonId, // <-- pass lessonId
           courseId, // <-- pass courseId
           userId, // <-- pass userId
+          fileSize: selectedFile.size,
+          duration,
         }),
       });
 
       if (!res.ok) {
-        setError("Invalid file type");
+        const msg = "Invalid file type";
+        setError(msg);
+        onError?.(msg);
         setUploading(false);
         return;
       }
@@ -131,6 +178,7 @@ function VideoUploader({
       setPreviewUrl(data.publicUrl || "");
       setSuccess(true);
       setError(null);
+      onError?.(null);
       setUploading(false);
       setProgress(100);
       // Pass aws_asset_key and duration as arguments
@@ -142,7 +190,9 @@ function VideoUploader({
         data.aws_asset_id || "", // <-- Pass asset id
       );
     } catch (err: any) {
-      setError(err.message || "Failed to upload to S3.");
+      const msg = err.message || "Failed to upload to S3.";
+      setError(msg);
+      onError?.(msg);
       setUploading(false);
       setSuccess(false);
     }
@@ -150,8 +200,16 @@ function VideoUploader({
 
   const handleClear = () => {
     setSelectedFile(null);
+    if (previewUrl) {
+      try {
+        URL.revokeObjectURL(previewUrl);
+      } catch (e) {
+        // ignore
+      }
+    }
     setPreviewUrl("");
     setError(null);
+    onError?.(null);
     setSuccess(false);
     setProgress(0);
     if (inputRef.current) inputRef.current.value = "";
@@ -159,7 +217,22 @@ function VideoUploader({
 
   return (
     <div className="space-y-3">
-      {label && <label className="block font-medium mb-1">{label}</label>}
+      {label && (
+        <div>
+          <label className="block font-medium mb-1">{label}</label>
+          <p className="text-xs text-muted-foreground">
+            Maximum: 200 MB, 30 minutes
+          </p>
+        </div>
+      )}
+
+      {/* Show selection/validation errors even when no file is selected */}
+      {error && !selectedFile && (
+        <div className="mt-2 flex items-center gap-2 text-destructive text-sm">
+          <XCircle className="w-5 h-5" />
+          {error}
+        </div>
+      )}
 
       {!selectedFile && (
         <Button
@@ -263,6 +336,7 @@ export default function MediaUploader({
   lessonId,
   courseId,
   userId,
+  onError,
 }: MediaUploaderProps): React.JSX.Element {
   // Only use custom logic for video
   if (type === "image") {
@@ -287,6 +361,7 @@ export default function MediaUploader({
     <VideoUploader
       label={label}
       onUploaded={onUploaded}
+      onError={onError}
       lessonId={lessonId}
       courseId={courseId}
       userId={userId}
