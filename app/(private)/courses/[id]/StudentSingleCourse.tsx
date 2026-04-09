@@ -34,18 +34,21 @@ export default function StudentSingleCourse({
   const [certificate, setCertificate] = useState<any | null>(null);
   const [isCourseCompleted, setIsCourseCompleted] = useState(false);
 
+  // --- Lesson transcript state ---
+  const [lessonTranscript, setLessonTranscript] = useState<string | null>(null);
+
   // --- Signed video URL logic ---
   const [signedVideoUrl, setSignedVideoUrl] = useState<string>("");
   const [signedUrlExpiry, setSignedUrlExpiry] = useState<number>(0);
   const [lastLessonId, setLastLessonId] = useState<string | undefined>(
-    undefined
+    undefined,
   );
 
   const isEnrolled = !!enrollment;
   // Get all lessons
   const allLessons = useMemo(
     () => sections.flatMap((s: any) => s.lessons || []),
-    [sections]
+    [sections],
   );
   // Compute current lesson from URL or default to first lesson
   const currentLesson = useMemo(() => {
@@ -85,13 +88,27 @@ export default function StudentSingleCourse({
     }
     fetch("/api/s3/download-url", {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ key: s3Key }),
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Error: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
-        setSignedVideoUrl(data.signedUrl);
-        setSignedUrlExpiry(Date.now() + 60 * 60 * 1000); // 1 hour expiry
-        setLastLessonId(currentLesson.id);
+        if (data.signedUrl) {
+          setSignedVideoUrl(data.signedUrl);
+          setSignedUrlExpiry(Date.now() + 60 * 60 * 1000); // 1 hour expiry
+          setLastLessonId(currentLesson.id);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch signed URL:", err);
+        setSignedVideoUrl("");
+        setSignedUrlExpiry(0);
+        setLastLessonId(undefined);
       });
   }, [
     currentLesson?.video_url,
@@ -133,6 +150,25 @@ export default function StudentSingleCourse({
   }, [currentLesson?.id, user?.id, id]);
 
   // -------------------------------------------------------
+  // Fetch lesson transcript whenever current lesson changes
+  // -------------------------------------------------------
+  useEffect(() => {
+    if (!currentLesson?.id) {
+      setLessonTranscript(null);
+      return;
+    }
+
+    fetch(`/api/student/transcripts?lessonId=${currentLesson.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setLessonTranscript(data.transcript?.transcript_text || null);
+      })
+      .catch(() => {
+        setLessonTranscript(null);
+      });
+  }, [currentLesson?.id]);
+
+  // -------------------------------------------------------
   // Handler: mark current lesson as complete
   // -------------------------------------------------------
   const handleMarkComplete = useCallback(
@@ -147,8 +183,7 @@ export default function StudentSingleCourse({
           courseId: id,
           lessonId,
           sectionId:
-            allLessons.find((l: any) => l.id === lessonId)?.section_id ||
-            null,
+            allLessons.find((l: any) => l.id === lessonId)?.section_id || null,
           action: "complete",
         }),
       });
@@ -178,7 +213,7 @@ export default function StudentSingleCourse({
           .catch(() => {});
       }
     },
-    [user?.id, id, allLessons]
+    [user?.id, id, allLessons],
   );
 
   // -------------------------------------------------------
@@ -190,7 +225,7 @@ export default function StudentSingleCourse({
       params.set("lesson", lessonId);
       router.replace(`?${params.toString()}`, { scroll: false });
     },
-    [router, urlSearchParams]
+    [router, urlSearchParams],
   );
 
   // Guard clause
@@ -212,13 +247,13 @@ export default function StudentSingleCourse({
     // Parallel fetch: course data + lesson progress + existing certificate
     Promise.all([
       fetch(`/api/student/courses?courseId=${id}&studentId=${user.id}`).then(
-        (r) => r.json()
+        (r) => r.json(),
+      ),
+      fetch(`/api/student/progress?studentId=${user.id}&courseId=${id}`).then(
+        (r) => r.json(),
       ),
       fetch(
-        `/api/student/progress?studentId=${user.id}&courseId=${id}`
-      ).then((r) => r.json()),
-      fetch(
-        `/api/student/certificates?studentId=${user.id}&courseId=${id}`
+        `/api/student/certificates?studentId=${user.id}&courseId=${id}`,
       ).then((r) => r.json()),
     ])
       .then(([courseData, progressData, certData]) => {
@@ -240,11 +275,11 @@ export default function StudentSingleCourse({
         } else {
           // Compute course completion from progress
           const allLessonsFlat = (courseData.sections || []).flatMap(
-            (s: any) => s.lessons || []
+            (s: any) => s.lessons || [],
           );
           const total = allLessonsFlat.length;
           const completed = Object.values(progressMap).filter(
-            (p) => p.is_completed
+            (p) => p.is_completed,
           ).length;
           if (total > 0 && completed >= total) {
             setIsCourseCompleted(true);
@@ -305,6 +340,7 @@ export default function StudentSingleCourse({
       studentId={user.id}
       onMarkComplete={handleMarkComplete}
       onCertificateIssued={(cert) => setCertificate(cert)}
+      lessonTranscript={lessonTranscript}
     />
   );
 }

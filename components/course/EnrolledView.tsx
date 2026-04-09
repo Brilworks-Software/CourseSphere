@@ -4,7 +4,11 @@ import Tabs from "@/components/course/StudentSingleCourseTabs";
 import CurriculumAccordion from "@/components/course/CurriculumAccordion";
 import MarkCompleteButton from "@/components/course/MarkCompleteButton";
 import CourseCompletionBanner from "@/components/course/CourseCompletionBanner";
+import VideoLessonChatbot from "@/components/course/VideoLessonChatbot";
+import { CourseAIChat } from "@/components/CourseAIChat";
 import { downloadCertificatePDF } from "@/components/certificate/certificate-pdf";
+import { Button } from "@/components/ui/button";
+import { MessageCircle } from "lucide-react";
 
 interface EnrolledViewProps {
   course: any;
@@ -21,6 +25,7 @@ interface EnrolledViewProps {
   studentId: string;
   onMarkComplete: (lessonId: string) => Promise<void>;
   onCertificateIssued?: (cert: any) => void;
+  lessonTranscript?: string | null;
 }
 
 export default function EnrolledView({
@@ -38,6 +43,7 @@ export default function EnrolledView({
   studentId,
   onMarkComplete,
   onCertificateIssued,
+  lessonTranscript,
 }: EnrolledViewProps) {
   const [activeTab, setActiveTab] = useState("Overview");
 
@@ -99,7 +105,7 @@ export default function EnrolledView({
     : false;
 
   return (
-    <div className="space-y-4 p-4 max-w-450 mx-auto">
+    <div className="space-y-4 p-4 max-w-full mx-auto">
       {/* Course completion banner */}
       {isCourseCompleted && (
         <CourseCompletionBanner
@@ -109,20 +115,31 @@ export default function EnrolledView({
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-10 gap-8">
+        {/* Video and Tabs Section */}
         <div className="lg:col-span-7 space-y-4">
           <Card className="overflow-hidden">
-            <div className="p-0">
+            <div className="p-0 relative">
               {currentLesson && allLessons ? (
                 <div className="w-full">
-                  <div className="aspect-video overflow-hidden">
+                  <div className="aspect-video overflow-hidden bg-black">
                     {/* Simple HTML5 video player */}
-                    <video
-                      src={signedVideoUrl || ""}
-                      controls
-                      controlsList="nodownload"
-                      preload="metadata"
-                      className="w-full h-full"
-                    />
+                    {signedVideoUrl ? (
+                      <video
+                        src={signedVideoUrl}
+                        controls
+                        controlsList="nodownload"
+                        preload="metadata"
+                        className="w-full h-full"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="text-center">
+                          <p className="text-muted-foreground text-sm">
+                            Loading video...
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -173,8 +190,9 @@ export default function EnrolledView({
           </Card>
         </div>
 
+        {/* Curriculum Sidebar */}
         <div className="lg:col-span-3">
-          <div className="lg:sticky lg:top-23">
+          <div className="lg:sticky lg:top-20">
             <CurriculumAccordion
               sections={sections}
               currentLessonId={currentLesson?.id}
@@ -183,6 +201,12 @@ export default function EnrolledView({
             />
           </div>
         </div>
+      </div>
+
+      {/* Floating Chatbot - Bottom Right */}
+      <div className="fixed bottom-6 right-6 z-40 w-full max-w-[500px]">
+        {/* Course-level AI Chat (prioritized) */}
+        <CourseAIChat courseId={course?.id} courseTitle={course?.title} />
       </div>
     </div>
   );
