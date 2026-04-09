@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/client";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import {
+  chunkTranscriptBySemantic,
+  TranscriptChunk,
+} from "@/lib/transcript-chunking";
+import { generateBatchEmbeddings } from "@/lib/embedding-service";
 
 export async function GET() {
   const supabase = await createClient();
@@ -136,6 +141,167 @@ export async function GET() {
           console.log(
             `[transcription] Saved transcript id=${transcriptRow?.id ?? "unknown"} for lesson=${job.lesson_id}`,
           );
+
+          // PHASE 2: Generate chunks and embeddings
+          try {
+            console.log(
+              `[transcription] Starting chunking/embedding pipeline for job=${job.id}`,
+            );
+
+            // Step 1: Create video_transcripts record if it doesn't exist
+            let videoTranscriptId = null;
+            const { data: existingTranscript } = await supabase
+              .from("video_transcripts")
+              .select("id")
+              .eq("s3_bucket", asset.bucket_name)
+              .eq("s3_key", asset.asset_key)
+              .single();
+
+            if (!existingTranscript) {
+              const { data: vtRow, error: vtError } = await supabase
+                .from("video_transcripts")
+                .insert({
+                  s3_bucket: asset.bucket_name,
+                  s3_key: asset.asset_key,
+                  transcript: transcript,
+                  status: "completed",
+                })
+                .select()
+                .single();
+
+              if (vtError) {
+                console.error(
+                  `[transcription] Failed to insert video_transcript for job=${job.id}:`,
+                  vtError,
+                );
+              } else {
+                videoTranscriptId = vtRow?.id;
+                console.log(
+                  `[transcription] Created video_transcript id=${videoTranscriptId} for job=${job.id}`,
+                );
+              }
+            } else {
+              videoTranscriptId = existingTranscript.id;
+            }
+
+            if (!videoTranscriptId) {
+              throw new Error("Failed to get or create video_transcript");
+            }
+
+            // Step 2: Chunk the transcript
+            const chunks = chunkTranscriptBySemantic(transcript);
+            console.log(
+              `[transcription] Generated ${chunks.length} chunks for job=${job.id}`,
+            );
+
+            if (chunks.length === 0) {
+              throw new Error("Chunking produced no chunks");
+            }
+
+            // Step 3: Generate embeddings for all chunks
+            const chunkTexts = chunks.map((c) => c.text);
+            console.log(
+              `[transcription] Starting embedding generation for ${chunkTexts.length} chunks...`,
+            );
+            const embeddingResult = await generateBatchEmbeddings(chunkTexts);
+            console.log(
+              `[transcription] Embedding generation complete: ${embeddingResult.success} succeeded, ${embeddingResult.failed} failed`,
+            );
+
+            if (embeddingResult.success === 0) {
+              throw new Error("Failed to generate any embeddings");
+            }
+
+            // Step 4: Insert chunks with embeddings into transcript_chunks table
+            const chunksToInsert = chunks
+              .map((chunk, index) => {
+                const embedding = embeddingResult.embeddings[index];
+                if (!embedding) {
+                  console.warn(
+                    `[transcription] Missing embedding for chunk ${index}`,
+                  );
+                  return null;
+                }
+
+                return {
+                  transcript_id: videoTranscriptId,
+                  lesson_id: job.lesson_id,
+                  course_id: job.course_id,
+                  chunk_text: chunk.text,
+                  chunk_order: chunk.chunkOrder,
+                  char_start_position: chunk.charStartPosition,
+                  char_end_position: chunk.charEndPosition,
+                  embedding: embedding.embedding, // The 768-dim vector
+                  word_count: chunk.wordCount,
+                };
+              })
+              .filter((c) => c !== null);
+
+            if (chunksToInsert.length === 0) {
+              throw new Error("No valid chunks to insert");
+            }
+
+            console.log(
+              `[transcription] Inserting ${chunksToInsert.length} chunks into transcript_chunks...`,
+            );
+
+            // Insert in batches to avoid payload size limits
+            const batchSize = 50;
+            for (let i = 0; i < chunksToInsert.length; i += batchSize) {
+              const batch = chunksToInsert.slice(
+                i,
+                Math.min(i + batchSize, chunksToInsert.length),
+              );
+              const { error: insertError } = await supabase
+                .from("transcript_chunks")
+                .insert(batch);
+
+              if (insertError) {
+                console.error(
+                  `[transcription] Failed to insert chunk batch for job=${job.id}:`,
+                  insertError,
+                );
+                throw insertError;
+              }
+
+              console.log(
+                `[transcription] Inserted batch of ${batch.length} chunks (${i + batch.length}/${chunksToInsert.length})`,
+              );
+            }
+
+            console.log(
+              `[transcription] Successfully inserted all ${chunksToInsert.length} chunks for job=${job.id}`,
+            );
+
+            // Step 5: Update job status to mark chunks_generated and embeddings_generated
+            await supabase
+              .from("video_transcription_jobs")
+              .update({
+                chunks_generated: true,
+                embedding_generated: embeddingResult.success > 0,
+                chunks_count: chunksToInsert.length,
+                last_chunked_at: new Date().toISOString(),
+              })
+              .eq("id", job.id);
+
+            console.log(
+              `[transcription] Updated job ${job.id}: chunks_generated=true, embeddings_generated=${embeddingResult.success > 0}, chunks_count=${chunksToInsert.length}`,
+            );
+          } catch (chunkingError) {
+            console.error(
+              `[transcription] Chunking/embedding pipeline failed for job=${job.id}:`,
+              chunkingError,
+            );
+            // Don't fail the entire job, just mark chunks_generated as false
+            await supabase
+              .from("video_transcription_jobs")
+              .update({
+                chunks_generated: false,
+                embedding_generated: false,
+                error_message: `Chunking/embedding error: ${String(chunkingError)}`,
+              })
+              .eq("id", job.id);
+          }
         }
       } else {
         console.warn(
@@ -153,7 +319,7 @@ export async function GET() {
         .eq("id", job.id);
 
       console.log(
-        `[transcription] Job ${job.id} completed (transcript_generated=${!!transcript}, embedding_present=${embeddingPresent})`,
+        `[transcription] Job ${job.id} completed (transcript_generated=${!!transcript})`,
       );
     } catch (err) {
       console.error(`[transcription] Error processing job ${job.id}:`, err);

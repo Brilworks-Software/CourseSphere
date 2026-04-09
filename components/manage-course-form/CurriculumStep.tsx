@@ -33,6 +33,7 @@ import {
 import { UploadCloud, CheckCircle2, XCircle, RefreshCcw } from "lucide-react";
 import MediaUploader from "@/components/MediaUploader";
 import { useUserContext } from "@/app/provider/user-context"; // <-- use user-context instead of AuthProvider
+import { EmbeddingGenerator } from "@/components/EmbeddingGenerator";
 
 interface CurriculumStepProps {
   courseId: string;
@@ -220,14 +221,11 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(
-        `/api/admin/courses/lessons/${lessonId}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: lessonTitleEdit }),
-        },
-      );
+      const res = await fetch(`/api/admin/courses/lessons/${lessonId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: lessonTitleEdit }),
+      });
       if (!res.ok) throw new Error("Failed to update lesson");
       setEditingLessonId(null);
       await fetchSection(sectionId);
@@ -705,9 +703,19 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
                                   </div>
                                 )}
                                 {videoUploadState[lesson.id]?.success && (
-                                  <div className="mt-2 flex items-center gap-2 text-success text-sm">
-                                    <CheckCircle2 className="w-5 h-5 text-primary" />
-                                    Video uploaded and lesson updated!
+                                  <div className="mt-2 space-y-3">
+                                    <div className="flex items-center gap-2 text-success text-sm">
+                                      <CheckCircle2 className="w-5 h-5 text-primary" />
+                                      Video uploaded and lesson updated!
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <EmbeddingGenerator
+                                        lessonId={lesson.id}
+                                        courseId={courseId}
+                                        lessonName={lesson.title}
+                                        showText={true}
+                                      />
+                                    </div>
                                   </div>
                                 )}
                                 <div className="text-xs text-muted-foreground mt-2">
@@ -758,14 +766,22 @@ export function CurriculumStep({ courseId }: CurriculumStepProps) {
               );
             })}
           </Accordion>
-          {/* Add Section Button */}
-          <Button
-            variant="secondary"
-            className="w-full flex items-center gap-2 py-6 text-lg "
-            onClick={handleAddSectionButton}
-          >
-            <Plus className="w-5 h-5" /> Section
-          </Button>
+
+          {/* Generate Embeddings & Add Section Buttons */}
+          <div className="flex gap-2 w-full">
+            <EmbeddingGenerator
+              courseId={courseId}
+              courseName="Course"
+              showText={true}
+            />
+            <Button
+              variant="secondary"
+              className="flex-1 flex items-center gap-2 py-6 text-lg "
+              onClick={handleAddSectionButton}
+            >
+              <Plus className="w-5 h-5" /> Section
+            </Button>
+          </div>
           {/* Section Dialog */}
           <Dialog open={showSectionDialog} onOpenChange={setShowSectionDialog}>
             <DialogContent>

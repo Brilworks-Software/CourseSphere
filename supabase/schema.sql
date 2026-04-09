@@ -376,6 +376,23 @@ CREATE TABLE public.profiles (
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
   CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );
+CREATE TABLE public.transcript_chunks (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  transcript_id uuid NOT NULL,
+  lesson_id uuid,
+  course_id uuid,
+  chunk_text text NOT NULL,
+  chunk_order integer NOT NULL,
+  char_start_position integer,
+  char_end_position integer,
+  embedding USER-DEFINED,
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT transcript_chunks_pkey PRIMARY KEY (id),
+  CONSTRAINT transcript_chunks_transcript_fkey FOREIGN KEY (transcript_id) REFERENCES public.video_transcripts(id),
+  CONSTRAINT transcript_chunks_lesson_fkey FOREIGN KEY (lesson_id) REFERENCES public.lessons(id),
+  CONSTRAINT transcript_chunks_course_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id)
+);
 CREATE TABLE public.transcript_embeddings (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   lesson_id uuid,
@@ -386,6 +403,20 @@ CREATE TABLE public.transcript_embeddings (
   CONSTRAINT transcript_embeddings_pkey PRIMARY KEY (id),
   CONSTRAINT transcript_embeddings_lesson_fkey FOREIGN KEY (lesson_id) REFERENCES public.lessons(id),
   CONSTRAINT transcript_embeddings_transcript_fkey FOREIGN KEY (transcript_id) REFERENCES public.lesson_transcripts(id)
+);
+CREATE TABLE public.transcripts (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  source_bucket text NOT NULL,
+  source_key text NOT NULL,
+  transcript text NOT NULL DEFAULT ''::text,
+  language text,
+  language_probability double precision,
+  duration_seconds double precision,
+  segments jsonb,
+  status text NOT NULL DEFAULT 'completed'::text CHECK (status = ANY (ARRAY['completed'::text, 'failed'::text])),
+  error_message text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT transcripts_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.users (
   id uuid NOT NULL,
@@ -423,4 +454,15 @@ CREATE TABLE public.video_transcription_jobs (
   updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
   CONSTRAINT video_transcription_jobs_pkey PRIMARY KEY (id),
   CONSTRAINT video_transcription_jobs_asset_fkey FOREIGN KEY (aws_asset_id) REFERENCES public.aws_assets(id)
+);
+CREATE TABLE public.video_transcripts (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  s3_bucket text NOT NULL,
+  s3_key text NOT NULL,
+  transcript text,
+  status text NOT NULL DEFAULT 'processing'::text,
+  error_message text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT video_transcripts_pkey PRIMARY KEY (id)
 );
