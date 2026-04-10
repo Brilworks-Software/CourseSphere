@@ -466,3 +466,16 @@ CREATE TABLE public.video_transcripts (
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT video_transcripts_pkey PRIMARY KEY (id)
 );
+CREATE TABLE public.conversation_messages (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  user_id uuid NOT NULL,
+  course_id uuid NOT NULL,
+  role text NOT NULL CHECK (role = ANY (ARRAY['user'::text, 'assistant'::text])),
+  content text NOT NULL,
+  word_count integer,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT conversation_messages_pkey PRIMARY KEY (id),
+  CONSTRAINT conversation_messages_user_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT conversation_messages_course_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id)
+);
+CREATE INDEX conversation_messages_user_course_created_idx ON public.conversation_messages(user_id, course_id, created_at DESC);
