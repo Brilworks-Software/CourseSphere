@@ -19,9 +19,11 @@ import {
   ChevronDown,
   ChevronUp,
   X,
+  AlertTriangle,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useUserContext } from "@/app/provider/user-context";
 
 interface Source {
   lessonId: string | null;
@@ -33,6 +35,8 @@ interface ChatMessage {
   type: "user" | "assistant";
   text: string;
   sources?: Source[];
+  wordCount?: number;
+  isTruncated?: boolean;
 }
 
 interface CourseAIChatProps {
@@ -46,6 +50,7 @@ export function CourseAIChat({
   courseTitle,
   float = true,
 }: CourseAIChatProps) {
+  const { user } = useUserContext();
   const [hasTranscripts, setHasTranscripts] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [message, setMessage] = useState("");
@@ -114,7 +119,7 @@ export function CourseAIChat({
       ]);
       setMessage("");
 
-      // Send to server with courseId
+      // Send to server with courseId and userId
       const response = await fetch("/api/ai/chat", {
         method: "POST",
         headers: {
@@ -124,6 +129,7 @@ export function CourseAIChat({
           courseId, // Server will fetch transcripts for this course
           message: userMessage,
           courseTitle,
+          userId: user?.id, // Include user ID for conversation history
         }),
       });
 
@@ -134,10 +140,12 @@ export function CourseAIChat({
         return;
       }
 
-      // Add assistant reply to history with sources if available
+      // Add assistant reply to history with sources and metadata
       const assistantMessage: ChatMessage = {
         type: "assistant",
         text: data.reply,
+        wordCount: data.wordCount,
+        isTruncated: data.isTruncated,
       };
 
       if (data.sources && data.sources.length > 0) {
@@ -258,6 +266,16 @@ export function CourseAIChat({
                       {isUser && (
                         <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center ml-2 text-xs font-semibold">
                           You
+                        </div>
+                      )}
+
+                      {/* Truncation indicator */}
+                      {!isUser && msg.isTruncated && (
+                        <div className="w-full mt-1 ml-10">
+                          <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-950 dark:text-amber-200 px-2 py-1 rounded">
+                            <AlertTriangle size={12} />
+                            <span>Response limited to ~100 words</span>
+                          </div>
                         </div>
                       )}
 

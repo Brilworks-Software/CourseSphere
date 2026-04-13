@@ -2,12 +2,121 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { searchRelevantChunks, SearchResult } from "@/lib/semantic-search";
+import { ConversationMessage } from "@/lib/types";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "",
   process.env.SUPABASE_SERVICE_ROLE_KEY || "",
 );
+
+/**
+ * Count words in a string
+ */
+function countWords(text: string): number {
+  return text.trim().split(/\s+/).length;
+}
+
+/**
+ * Truncate text to approximately maxWords words and add truncation indicator
+ */
+function truncateToWordLimit(
+  text: string,
+  maxWords: number = 100,
+): {
+  text: string;
+  isTruncated: boolean;
+} {
+  const words = text.trim().split(/\s+/);
+  if (words.length <= maxWords) {
+    return { text, isTruncated: false };
+  }
+  return {
+    text: words.slice(0, maxWords).join(" ") + " [truncated...]",
+    isTruncated: true,
+  };
+}
+
+/**
+ * Get conversation history for a user and course (last 5 messages)
+ */
+async function getConversationHistory(
+  userId: string,
+  courseId: string,
+  limit: number = 5,
+): Promise<ConversationMessage[]> {
+  try {
+    const { data, error } = await supabase
+      .from("conversation_messages")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("course_id", courseId)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.warn("Failed to fetch conversation history:", error);
+      return [];
+    }
+
+    return (data || []).reverse(); // Reverse to get chronological order
+  } catch (err) {
+    console.warn("Error fetching conversation history:", err);
+    return [];
+  }
+}
+
+/**
+ * Save a message to conversation history
+ */
+async function saveConversationMessage(
+  userId: string,
+  courseId: string,
+  role: "user" | "assistant",
+  content: string,
+): Promise<ConversationMessage | null> {
+  try {
+    const wordCount = countWords(content);
+    const { data, error } = await supabase
+      .from("conversation_messages")
+      .insert({
+        user_id: userId,
+        course_id: courseId,
+        role,
+        content,
+        word_count: wordCount,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.warn("Failed to save conversation message:", error);
+      return null;
+    }
+
+    return data;
+  } catch (err) {
+    console.warn("Error saving conversation message:", err);
+    return null;
+  }
+}
+
+/**
+ * Build conversation context from history
+ */
+function buildConversationContext(messages: ConversationMessage[]): string {
+  if (messages.length === 0) {
+    return "";
+  }
+
+  let context = "\n\n[CONVERSATION HISTORY]\n";
+  for (const msg of messages) {
+    const role = msg.role === "user" ? "Student" : "Assistant";
+    context += `${role}: ${msg.content}\n\n`;
+  }
+
+  return context;
+}
 
 /**
  * Extract filename base without extension
@@ -162,6 +271,7 @@ export async function POST(request: Request) {
     const courseId = body.courseId;
     const courseTitle = body.courseTitle;
     const lessonTitle = body.lessonTitle;
+    const userId = body.userId; // Add user ID for conversation history
     // Optional client flag to force using full transcripts instead of semantic search
     const clientUseTranscripts =
       body.useTranscripts ?? body.useTranscript ?? false;
@@ -183,7 +293,7 @@ export async function POST(request: Request) {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     // Base system prompt
-    let systemPrompt = `You are a helpful course assistant. You are helping a student understand the course content.`;
+    let systemPrompt = `You are a helpful course assistant. You are helping a student understand the course content. Keep your responses concise - aim for around 100 words maximum. Be direct and helpful.`;
 
     if (courseTitle) {
       systemPrompt += ` Course: ${courseTitle}.`;
@@ -196,6 +306,16 @@ export async function POST(request: Request) {
     let searchResults: SearchResult[] = [];
     let usedSemanticSearch = false;
     let contextContent = "";
+
+    // Get conversation history for better context (if userId provided)
+    let conversationHistory: ConversationMessage[] = [];
+    if (userId && courseId) {
+      conversationHistory = await getConversationHistory(userId, courseId);
+      if (conversationHistory.length > 0) {
+        const historyContext = buildConversationContext(conversationHistory);
+        systemPrompt += historyContext;
+      }
+    }
 
     // PHASE 3: Semantic Search RAG or Transcript-First Mode
     // If courseId provided and no direct transcript, either run semantic search
@@ -289,6 +409,11 @@ export async function POST(request: Request) {
       systemPrompt += ` Please help the student by answering their questions.`;
     }
 
+    // Save user message to conversation history (if userId and courseId provided)
+    if (userId && courseId) {
+      await saveConversationMessage(userId, courseId, "user", message);
+    }
+
     // Generate response using Gemini
     const result = await model.generateContent([
       {
@@ -300,11 +425,31 @@ export async function POST(request: Request) {
     ]);
 
     const response = result.response;
-    const responseText = response.text();
+    let responseText = response.text();
+
+    // Truncate response to ~100 words
+    const { text: truncatedResponse, isTruncated } = truncateToWordLimit(
+      responseText,
+      100,
+    );
+    responseText = truncatedResponse;
+    const wordCount = countWords(responseText);
+
+    // Save assistant message to conversation history (if userId and courseId provided)
+    if (userId && courseId) {
+      await saveConversationMessage(
+        userId,
+        courseId,
+        "assistant",
+        responseText,
+      );
+    }
 
     // Build response with sources
     const responseData: any = {
       reply: responseText,
+      wordCount,
+      isTruncated,
       success: true,
       searched: usedSemanticSearch,
       chunksUsed: searchResults.length,
@@ -320,7 +465,7 @@ export async function POST(request: Request) {
     }
 
     console.log(
-      `[chat] Response generated: searched=${usedSemanticSearch}, sources=${searchResults.length}`,
+      `[chat] Response generated: searched=${usedSemanticSearch}, sources=${searchResults.length}, truncated=${isTruncated}`,
     );
 
     return NextResponse.json(responseData);
